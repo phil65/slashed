@@ -160,6 +160,21 @@ class CommandStore:
             msg = f"Command execution failed: {e}"
             raise CommandError(msg) from e
 
+    async def execute_command_with_context(
+        self,
+        command_str: str,
+        context: Any,
+        output_writer: OutputWriter | None = None,
+        metadata: dict[str, Any] | None = None,
+    ):
+        """Execute a command with a custom context."""
+        ctx = self.create_context(
+            context,
+            output_writer=output_writer,
+            metadata=metadata,
+        )
+        await self.execute_command(command_str, ctx)
+
     def register_builtin_commands(self) -> None:
         """Register default system commands."""
         from slashed.builtin import get_builtin_commands
