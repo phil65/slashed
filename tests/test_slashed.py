@@ -27,15 +27,15 @@ def output() -> MockOutput:
 
 
 @pytest.fixture
-def context(output: MockOutput) -> CommandContext:
-    """Fixture providing command context."""
-    return CommandContext(output=output, data=None)
-
-
-@pytest.fixture
 def store() -> CommandStore:
     """Fixture providing command store."""
     return CommandStore()
+
+
+@pytest.fixture
+def context(store: CommandStore, output: MockOutput) -> CommandContext:
+    """Fixture providing command context."""
+    return store.create_context(data=None, output_writer=output)
 
 
 async def test_basic_command_execution(
@@ -138,7 +138,7 @@ def test_command_store_operations(store: CommandStore) -> None:
     assert store.get_command("test") == cmd
 
     # Test duplicate registration
-    with pytest.raises(ValueError):  # noqa: PT011
+    with pytest.raises(ValueError, match="Command 'test' already registered"):
         store.register_command(cmd)
 
     # Test unregistration
@@ -153,22 +153,30 @@ def test_command_store_operations(store: CommandStore) -> None:
 def test_parse_command_errors() -> None:
     """Test command parsing error cases."""
     # Empty command
-    with pytest.raises(CommandError):
+    with pytest.raises(CommandError, match="Empty command"):
         parse_command("")
 
     # Invalid quote
-    with pytest.raises(CommandError):
+    with pytest.raises(CommandError, match="Invalid command syntax"):
         parse_command('test "unclosed')
 
     # Missing kwarg value
-    with pytest.raises(CommandError):
+    with pytest.raises(CommandError, match="Missing value for argument"):
         parse_command("test --name")
 
 
-@pytest.mark.asyncio
 async def test_execute_unknown_command(
-    store: CommandStore, context: CommandContext
+    store: CommandStore,
+    context: CommandContext,
 ) -> None:
     """Test executing non-existent command."""
     with pytest.raises(CommandError, match="Unknown command: unknown"):
         await store.execute_command("unknown", context)
+
+
+async def test_context_creation(store: CommandStore, output: MockOutput) -> None:
+    """Test context creation with custom output."""
+    ctx = store.create_context(data=None, output_writer=output)
+    assert ctx.output is output
+    assert ctx.command_store is store
+    assert ctx.data is None

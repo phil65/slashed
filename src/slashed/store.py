@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from slashed.base import CommandContext, parse_command
+from slashed.base import CommandContext, OutputWriter, parse_command
 from slashed.exceptions import CommandError
 from slashed.log import get_logger
+from slashed.output import DefaultOutputWriter
 
 
 if TYPE_CHECKING:
@@ -22,6 +23,23 @@ class CommandStore:
     def __init__(self) -> None:
         """Initialize an empty command store."""
         self._commands: dict[str, BaseCommand] = {}
+
+    def create_context(
+        self,
+        data: Any,
+        output_writer: OutputWriter | None = None,
+    ) -> CommandContext:
+        """Create a command execution context.
+
+        Args:
+            data: Custom context data
+            output_writer: Optional custom output writer
+
+        Returns:
+            Command execution context
+        """
+        writer = output_writer or DefaultOutputWriter()
+        return CommandContext(output=writer, data=data, command_store=self)
 
     def register_command(self, command: BaseCommand) -> None:
         """Register a new command.

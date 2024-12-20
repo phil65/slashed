@@ -15,6 +15,8 @@ from slashed.exceptions import CommandError
 if TYPE_CHECKING:
     from collections.abc import Awaitable
 
+    from slashed.store import CommandStore
+
 T = TypeVar("T")
 
 
@@ -32,6 +34,7 @@ class CommandContext[T]:
 
     output: OutputWriter
     data: T
+    command_store: CommandStore
     metadata: dict[str, Any] = field(default_factory=dict)
 
 

@@ -30,17 +30,22 @@
 
 [Read the documentation!](https://phil65.github.io/slashed/)
 
-
-A simple Python library for implementing slash commands with autocompletion support.
+A Python library for implementing slash commands with rich autocompletion support.
 
 ## Features
 
 - Simple command registration system
-- Rich autocompletion support
-- Built-in file path and environment variable completion
+- Rich autocompletion support with multiple providers
+- Built-in completers for:
+  - File paths
+  - Environment variables
+  - Choice lists
+  - Keyword arguments
+  - Multi-value inputs
 - Extensible completion provider system
-- Type-safe with full type hints
+- Type-safe with comprehensive type hints
 - Modern Python features (3.12+)
+- Built-in help system
 
 ## Installation
 
@@ -52,40 +57,49 @@ pip install slashed
 
 ```python
 from slashed import Command, CommandStore, CommandContext
-from slashed.output import DefaultOutputWriter
+from slashed.completers import ChoiceCompleter
 
 # Create a command store
 store = CommandStore()
 
-# Define a simple command
-async def hello(ctx: CommandContext, args: list[str], kwargs: dict[str, str]) -> None:
+# Define a command with completion support
+async def greet(ctx: CommandContext, args: list[str], kwargs: dict[str, str]) -> None:
     name = args[0] if args else "World"
-    await ctx.output.print(f"Hello, {name}!")
+    greeting = kwargs.get("greeting", "Hello")
+    await ctx.output.print(f"{greeting}, {name}!")
 
-hello_cmd = Command(
-    name="hello",
-    description="Say hello",
-    execute_func=hello,
-    usage="[name]"
+greet_cmd = Command(
+    name="greet",
+    description="Greet someone",
+    execute_func=greet,
+    usage="[name] --greeting <greeting>",
+    help_text="Greet someone with a custom greeting.\n\nExample: /greet Phil --greeting Hi",
+    category="demo",
+    completer=ChoiceCompleter({
+        "World": "Default greeting target",
+        "Everyone": "Greet all users",
+        "Team": "Greet the team"
+    })
 )
 
 # Register the command
-store.register_command(hello_cmd)
+store.register_command(greet_cmd)
 
-# Create output writer
-output = DefaultOutputWriter()
+# Register built-in commands (help, etc)
+store.register_builtin_commands()
 
-# Execute a command
-await store.execute_command("hello Phil", CommandContext(output=output, data=None))
+# Create context and execute a command
+ctx = store.create_context(data=None)
+await store.execute_command("greet Phil --greeting Hi", ctx)
 ```
 
 ## Documentation
 
-For full documentation, visit [slashed.readthedocs.io](https://phil65.github.io/slashed).
+For full documentation including advanced usage and API reference, visit [slashed.readthedocs.io](https://phil65.github.io/slashed).
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please feel free to submit a Pull Request. Make sure to read our contributing guidelines first.
 
 ## License
 

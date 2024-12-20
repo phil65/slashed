@@ -11,7 +11,7 @@ async def help_command(
     kwargs: dict[str, str],
 ) -> None:
     """Show available commands."""
-    store = ctx.data._command_store
+    store = ctx.data.command_store
 
     if args:  # Detail for specific command
         name = args[0]
@@ -42,7 +42,7 @@ async def show_command(
         return
 
     command_name = args[0].strip("/")  # Remove leading slash if present
-    command_store = ctx.data._command_store
+    command_store = ctx.data.command_store
 
     if command := command_store.get_command(command_name):
         sections = [
