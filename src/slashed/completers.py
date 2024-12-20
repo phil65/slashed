@@ -4,10 +4,13 @@ from __future__ import annotations
 
 from copy import copy
 import os
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-import upath
+
+try:
+    from upath import UPath as Path
+except ImportError:
+    from pathlib import Path
 
 from slashed import utils
 from slashed.completion import CompletionItem, CompletionProvider
@@ -64,7 +67,7 @@ class PathCompleter(CompletionProvider):
 
         try:
             # Handle absolute paths
-            if upath.UPath(word).is_absolute():
+            if Path(word).is_absolute():
                 path = Path(word)
             # Handle user paths
             elif self.expanduser and word.startswith("~"):
