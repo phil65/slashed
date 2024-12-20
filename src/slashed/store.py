@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from slashed.base import CommandContext, OutputWriter, parse_command
 from slashed.exceptions import CommandError
@@ -29,18 +29,25 @@ class CommandStore:
         self,
         data: T,
         output_writer: OutputWriter | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> CommandContext[T]:
         """Create a command execution context.
 
         Args:
             data: Custom context data
             output_writer: Optional custom output writer
+            metadata: Additional metadata
 
         Returns:
             Command execution context
         """
         writer = output_writer or DefaultOutputWriter()
-        return CommandContext(output=writer, data=data, command_store=self)
+        return CommandContext(
+            output=writer,
+            data=data,
+            command_store=self,
+            metadata=metadata or {},
+        )
 
     def register_command(self, command: BaseCommand) -> None:
         """Register a new command.
