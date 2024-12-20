@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, TypeVar
 
 from slashed.base import CommandContext, OutputWriter, parse_command
 from slashed.exceptions import CommandError
@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from slashed.base import BaseCommand
 
 
+T = TypeVar("T")
 logger = get_logger(__name__)
 
 
@@ -26,9 +27,9 @@ class CommandStore:
 
     def create_context(
         self,
-        data: Any,
+        data: T,
         output_writer: OutputWriter | None = None,
-    ) -> CommandContext:
+    ) -> CommandContext[T]:
         """Create a command execution context.
 
         Args:
