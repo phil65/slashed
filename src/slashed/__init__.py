@@ -24,7 +24,7 @@ from slashed.output import DefaultOutputWriter
 from slashed.store import CommandStore
 
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 
 __all__ = [
     # Core
