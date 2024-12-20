@@ -93,6 +93,53 @@ ctx = store.create_context(data=None)
 await store.execute_command("greet Phil --greeting Hi", ctx)
 ```
 
+## Generic Context Example
+
+```python
+from dataclasses import dataclass
+from slashed import Command, CommandStore, CommandContext
+
+
+# Define your custom context data
+@dataclass
+class AppContext:
+    user_name: str
+    is_admin: bool
+
+
+# Command that uses the typed context
+async def admin_cmd(
+    ctx: CommandContext[AppContext],
+    args: list[str],
+    kwargs: dict[str, str],
+) -> None:
+    if not ctx.data.is_admin:
+        await ctx.output.print("Sorry, admin access required!")
+        return
+    await ctx.output.print(f"Welcome admin {ctx.data.user_name}!")
+
+
+# Create and register the command
+admin_command = Command(
+    name="admin",
+    description="Admin-only command",
+    execute_func=admin_cmd,
+    category="admin",
+)
+
+# Setup the store with typed context
+store = CommandStore()
+store.register_command(admin_command)
+
+# Create context with your custom data
+ctx = store.create_context(
+    data=AppContext(user_name="Alice", is_admin=True)
+)
+
+# Execute command with typed context
+await store.execute_command("admin", ctx)
+```
+
 ## Documentation
 
 For full documentation including advanced usage and API reference, visit [slashed.readthedocs.io](https://phil65.github.io/slashed).
