@@ -21,7 +21,7 @@ logger = get_logger(__name__)
 class CommandStore:
     """Central store for command management."""
 
-    def __init__(self) -> None:
+    def __init__(self):
         """Initialize an empty command store."""
         self._commands: dict[str, BaseCommand] = {}
 
@@ -42,12 +42,8 @@ class CommandStore:
             Command execution context
         """
         writer = output_writer or DefaultOutputWriter()
-        return CommandContext(
-            output=writer,
-            data=data,
-            command_store=self,
-            metadata=metadata or {},
-        )
+        meta = metadata or {}
+        return CommandContext(output=writer, data=data, command_store=self, metadata=meta)
 
     def register_command(self, command: BaseCommand) -> None:
         """Register a new command.
@@ -145,13 +141,9 @@ class CommandStore:
                 msg = f"Unknown command: {parsed.name}"
                 raise CommandError(msg)  # noqa: TRY301
 
+            msg = "Executing command: %s (args=%s, kwargs=%s)"
+            logger.debug(msg, parsed.name, parsed.args.args, parsed.args.kwargs)
             # Execute it
-            logger.debug(
-                "Executing command: %s (args=%s, kwargs=%s)",
-                parsed.name,
-                parsed.args.args,
-                parsed.args.kwargs,
-            )
             await command.execute(ctx, parsed.args.args, parsed.args.kwargs)
 
         except CommandError:
