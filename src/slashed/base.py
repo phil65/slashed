@@ -94,12 +94,7 @@ class BaseCommand(ABC):
         return self._help_text or self.description
 
     @abstractmethod
-    async def execute(
-        self,
-        ctx: CommandContext,
-        args: list[str],
-        kwargs: dict[str, str],
-    ) -> None:
+    async def execute(self, ctx: CommandContext, args: list[str], kwargs: dict[str, str]):
         """Execute the command with parsed arguments."""
         ...
 
@@ -190,8 +185,5 @@ def parse_command(cmd_str: str) -> ParsedCommand:
         else:
             args.append(part)
             i += 1
-
-    return ParsedCommand(
-        name=name,
-        args=ParsedCommandArgs(args=args, kwargs=kwargs),
-    )
+    args_obj = ParsedCommandArgs(args=args, kwargs=kwargs)
+    return ParsedCommand(name=name, args=args_obj)
