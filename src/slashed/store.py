@@ -172,6 +172,7 @@ class CommandStore:
         Raises:
             CommandError: If command parsing or execution fails
         """
+        self.add_to_history(command_str)
         try:
             # Parse the command string
             parsed = parse_command(command_str)
