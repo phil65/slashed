@@ -10,7 +10,14 @@ from slashed.log import get_logger
 from slashed.output import DefaultOutputWriter
 
 
+try:
+    from upath import UPath as Path
+except ImportError:
+    from pathlib import Path
+
 if TYPE_CHECKING:
+    import os
+
     from slashed.base import BaseCommand
 
 
@@ -19,11 +26,47 @@ logger = get_logger(__name__)
 
 
 class CommandStore:
-    """Central store for command management."""
+    """Central store for command management and history."""
 
-    def __init__(self):
-        """Initialize an empty command store."""
+    def __init__(self, history_file: str | os.PathLike[str] | None = None):
+        """Initialize command store.
+
+        Args:
+            history_file: Optional path to history file
+        """
         self._commands: dict[str, BaseCommand] = {}
+        self._command_history: list[str] = []
+        self._history_path = Path(history_file) if history_file else None
+
+    async def initialize(self):
+        """Initialize command store and load history."""
+        try:
+            if self._history_path and self._history_path.exists():
+                self._command_history = self._history_path.read_text().splitlines()
+        except Exception:
+            logger.exception("Failed to load command history")
+            self._command_history = []
+
+        # Register default commands
+        self.register_builtin_commands()
+
+    def add_to_history(self, command: str):
+        """Add command to history."""
+        if not command.strip():
+            return
+
+        self._command_history.append(command)
+        if self._history_path:
+            self._history_path.write_text("\n".join(self._command_history))
+
+    def get_history(
+        self, limit: int | None = None, newest_first: bool = True
+    ) -> list[str]:
+        """Get command history."""
+        history = self._command_history
+        if newest_first:
+            history = history[::-1]
+        return history[:limit] if limit else history
 
     def create_context(
         self,
@@ -45,7 +88,7 @@ class CommandStore:
         meta = metadata or {}
         return CommandContext(output=writer, data=data, command_store=self, metadata=meta)
 
-    def register_command(self, command: BaseCommand) -> None:
+    def register_command(self, command: BaseCommand):
         """Register a new command.
 
         Args:
@@ -61,7 +104,7 @@ class CommandStore:
         self._commands[command.name] = command
         logger.debug("Registered command: %s", command.name)
 
-    def unregister_command(self, name: str) -> None:
+    def unregister_command(self, name: str):
         """Remove a command.
 
         Args:
@@ -117,11 +160,7 @@ class CommandStore:
             result.setdefault(cmd.category, []).append(cmd)
         return result
 
-    async def execute_command(
-        self,
-        command_str: str,
-        ctx: CommandContext,
-    ) -> None:
+    async def execute_command(self, command_str: str, ctx: CommandContext):
         """Execute a command from string input.
 
         Args:
@@ -167,7 +206,7 @@ class CommandStore:
         )
         await self.execute_command(command_str, ctx)
 
-    def register_builtin_commands(self) -> None:
+    def register_builtin_commands(self):
         """Register default system commands."""
         from slashed.builtin import get_builtin_commands
 
