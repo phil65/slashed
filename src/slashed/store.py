@@ -37,6 +37,8 @@ class CommandStore:
         self._commands: dict[str, BaseCommand] = {}
         self._command_history: list[str] = []
         self._history_path = Path(history_file) if history_file else None
+        if self._history_path:
+            self._history_path.parent.mkdir(parents=True, exist_ok=True)
 
     async def initialize(self):
         """Initialize command store and load history."""
