@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from slashed.base import OutputWriter
 
@@ -15,12 +15,16 @@ if TYPE_CHECKING:
 class DefaultOutputWriter(OutputWriter):
     """Default output implementation using rich if available."""
 
-    def __init__(self) -> None:
-        """Initialize output writer."""
+    def __init__(self, **console_kwargs: Any) -> None:
+        """Initialize output writer.
+
+        Args:
+            **console_kwargs: Optional kwargs passed to rich.Console constructor
+        """
         try:
             from rich.console import Console
 
-            self._console: Console | None = Console()
+            self._console: Console | None = Console(**console_kwargs)
         except ImportError:
             self._console = None
 
