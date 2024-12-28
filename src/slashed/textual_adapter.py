@@ -8,6 +8,7 @@ from prompt_toolkit.document import Document
 from textual.app import App, ComposeResult
 from textual.suggester import Suggester
 from textual.widgets import Input
+from typing_extensions import TypeVar
 
 from slashed.completers import ChoiceCompleter
 from slashed.completion import CompletionContext
@@ -17,6 +18,8 @@ from slashed.store import CommandStore
 
 if TYPE_CHECKING:
     from slashed.base import CommandContext, CompletionProvider
+
+TResult = TypeVar("TResult", default=None)
 
 
 class SlashedSuggester(Suggester):
@@ -63,18 +66,27 @@ class SlashedSuggester(Suggester):
             return completion.text
 
 
-class SlashedApp(App[None]):
+class SlashedApp[TResult](App[TResult]):
     """Base app with slash command support."""
 
     def __init__(
         self,
         store: CommandStore | None = None,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
-        """Initialize app with command store."""
-        super().__init__()
+        """Initialize app with command store.
+
+        Args:
+            store: Optional command store, creates new one if not provided
+            *args: Arguments passed to textual.App
+            **kwargs: Keyword arguments passed to textual.App
+        """
+        super().__init__(*args, **kwargs)
         self.store = store or CommandStore()
-        writer = DefaultOutputWriter()
-        self.context = self.store.create_context(data=None, output_writer=writer)
+        self.context = self.store.create_context(
+            data=None, output_writer=DefaultOutputWriter()
+        )
 
     async def on_mount(self) -> None:
         """Initialize command store when app is mounted."""
