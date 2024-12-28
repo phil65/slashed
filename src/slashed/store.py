@@ -229,5 +229,6 @@ class CommandStore:
         """Register default system commands."""
         from slashed.builtin import get_builtin_commands
 
+        logger.debug("Registering builtin commands")
         for command in get_builtin_commands():
             self.register_command(command)

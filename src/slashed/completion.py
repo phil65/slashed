@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING, Any
 
 from typing_extensions import TypeVar
 
+from slashed.log import get_logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -19,6 +21,8 @@ if TYPE_CHECKING:
     from slashed.slashed_types import CompletionKind
 
 T = TypeVar("T", default=Any)
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -110,6 +114,13 @@ class CompletionContext[T]:
         self._args = parts[1:]
         self._current_word = self._document.get_word_before_cursor()
         self._arg_position = len(text[: self._document.cursor_position].split()) - 1
+        logger.info(
+            "Parsed command %s with args %s. Current word: %s (position %d)",
+            self._command_name,
+            self._args,
+            self._current_word,
+            self._arg_position,
+        )
 
     @property
     def command_name(self) -> str | None:
@@ -173,6 +184,7 @@ class CommandCompleter:
     ) -> Iterator[CompletionItem]:
         """Get completions for the current context."""
         # If at start of command, complete command names
+        logger.debug("Getting completions for command %s", context.command_name)
         if not context.command_name:
             word = context.current_word.lstrip("/")  # Remove slash for matching
             matching_commands = [name for name in self._commands if name.startswith(word)]
@@ -191,8 +203,10 @@ class CommandCompleter:
         # Get command-specific completions
         command = self._commands.get(context.command_name)
         if command and (completer := command.get_completer()):
+            logger.debug("Fetching completions for command %s", command.name)
             yield from completer.get_completions(context)
 
         # Get global completions
         for provider in self._global_providers:
+            logger.debug("Fetching completions for provider %r", provider)
             yield from provider.get_completions(context)
