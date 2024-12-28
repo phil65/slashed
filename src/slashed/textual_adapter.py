@@ -84,7 +84,7 @@ class SlashedApp[TResult](App[TResult]):
         """
         super().__init__(*args, **kwargs)
         self.store = store or CommandStore()
-        self.context = self.store.create_context(
+        self.context: CommandContext[Any] = self.store.create_context(
             data=None, output_writer=DefaultOutputWriter()
         )
 
