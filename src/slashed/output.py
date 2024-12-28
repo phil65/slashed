@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 class DefaultOutputWriter(OutputWriter):
     """Default output implementation using rich if available."""
 
-    def __init__(self, **console_kwargs: Any) -> None:
+    def __init__(self, **console_kwargs: Any):
         """Initialize output writer.
 
         Args:
@@ -28,7 +28,7 @@ class DefaultOutputWriter(OutputWriter):
         except ImportError:
             self._console = None
 
-    async def print(self, message: str) -> None:
+    async def print(self, message: str):
         """Write message to output.
 
         Uses rich.Console if available, else regular print().

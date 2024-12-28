@@ -14,7 +14,7 @@ class DemoApp(SlashedApp):
     }
     """
 
-    async def handle_input(self, value: str) -> None:
+    async def handle_input(self, value: str):
         """Handle regular input by echoing it."""
         await self.context.output.print(f"Echo: {value}")
 

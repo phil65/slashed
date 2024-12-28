@@ -23,7 +23,7 @@ T = TypeVar("T")
 class OutputWriter(Protocol):
     """Interface for command output."""
 
-    async def print(self, message: str) -> None:
+    async def print(self, message: str):
         """Write a message to output."""
         ...
 
@@ -112,7 +112,7 @@ class Command(BaseCommand):
         usage: str | None = None,
         help_text: str | None = None,
         completer: CompletionProvider | Callable[[], CompletionProvider] | None = None,
-    ) -> None:
+    ):
         self.name = name
         self.description = description
         self.category = category
@@ -126,7 +126,7 @@ class Command(BaseCommand):
         ctx: CommandContext,
         args: list[str] | None = None,
         kwargs: dict[str, str] | None = None,
-    ) -> None:
+    ):
         """Execute the command using provided function."""
         await self._execute_func(ctx, args or [], kwargs or {})
 

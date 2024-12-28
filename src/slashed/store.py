@@ -102,7 +102,7 @@ class CommandStore:
         """Create a completion context."""
         return CompletionContext(document, command_context)
 
-    def register_command(self, command: type[SlashedCommand] | BaseCommand) -> None:
+    def register_command(self, command: type[SlashedCommand] | BaseCommand):
         """Register a new command.
 
         Args:

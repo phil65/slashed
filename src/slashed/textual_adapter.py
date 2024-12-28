@@ -30,7 +30,7 @@ class SlashedSuggester(Suggester):
         provider: CompletionProvider,
         context: CommandContext[Any],
         case_sensitive: bool = False,
-    ) -> None:
+    ):
         """Initialize suggester with a completion provider.
 
         Args:
@@ -74,7 +74,7 @@ class SlashedApp[TResult](App[TResult]):
         store: CommandStore | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> None:
+    ):
         """Initialize app with command store.
 
         Args:
@@ -88,7 +88,7 @@ class SlashedApp[TResult](App[TResult]):
             data=None, output_writer=DefaultOutputWriter()
         )
 
-    async def on_mount(self) -> None:
+    async def on_mount(self):
         """Initialize command store when app is mounted."""
         await self.store.initialize()
 
@@ -104,7 +104,7 @@ class SlashedApp[TResult](App[TResult]):
         msg = "Type a command (starts with /) or text..."
         yield Input(placeholder=msg, id="command-input", suggester=suggester)
 
-    async def on_input_submitted(self, event: Input.Submitted) -> None:
+    async def on_input_submitted(self, event: Input.Submitted):
         """Handle input submission."""
         if event.value.startswith("/"):
             # Remove leading slash and execute
@@ -122,5 +122,5 @@ class SlashedApp[TResult](App[TResult]):
         # Let subclasses handle non-command input
         await self.handle_input(event.value)
 
-    async def handle_input(self, value: str) -> None:
+    async def handle_input(self, value: str):
         """Override this to handle non-command input."""

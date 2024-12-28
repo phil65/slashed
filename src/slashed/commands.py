@@ -28,7 +28,7 @@ class SlashedCommand(BaseCommand):
                 worker_id: str,     # required param (no default)
                 host: str,          # required param (no default)
                 port: int = 8080,   # optional param (has default)
-            ) -> None:
+            ):
                 await ctx.output.print(f"Adding worker {worker_id} at {host}:{port}")
     """
 
@@ -47,14 +47,14 @@ class SlashedCommand(BaseCommand):
     help_text: str = ""
     """Optional help text override"""
 
-    def __init__(self) -> None:
+    def __init__(self):
         """Initialize command instance."""
         self.description = (
             self.description or inspect.getdoc(self.__class__) or "No description"
         )
         self.help_text = type(self).help_text or self.description
 
-    def __init_subclass__(cls) -> None:
+    def __init_subclass__(cls):
         """Process command class at definition time.
 
         Validates required attributes and generates description/usage from metadata.
@@ -87,7 +87,7 @@ class SlashedCommand(BaseCommand):
         ctx: CommandContext,
         *args: Any,
         **kwargs: Any,
-    ) -> None:
+    ):
         """Execute the command logic.
 
         This method should be implemented with explicit parameters.
@@ -104,7 +104,7 @@ class SlashedCommand(BaseCommand):
         ctx: CommandContext,
         args: list[str],
         kwargs: dict[str, str],
-    ) -> None:
+    ):
         """Execute command by binding command-line arguments to method parameters."""
         # Get concrete method's signature
         method = type(self).execute_command

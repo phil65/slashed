@@ -21,7 +21,7 @@ class SimpleCommand(SlashedCommand):
         ctx: CommandContext,
         required_arg: str,
         optional_arg: str = "default",
-    ) -> None:
+    ):
         """Test implementation."""
         await ctx.output.print(f"{required_arg} {optional_arg}")
 
@@ -40,7 +40,7 @@ class FullCommand(SlashedCommand):
         ctx: CommandContext,
         required_arg: str,
         optional_arg: str = "default",
-    ) -> None:
+    ):
         """Execute with both required and optional args."""
         await ctx.output.print(f"{required_arg} {optional_arg}")
 
@@ -54,7 +54,7 @@ class DocstringCommand(SlashedCommand):
         self,
         ctx: CommandContext,
         value: str,
-    ) -> None:
+    ):
         """Do something with value."""
         await ctx.output.print(value)
 
@@ -140,7 +140,7 @@ async def test_argument_binding(context):
             first: str,
             second: str = "default",
             third: str | None = None,
-        ) -> None:
+        ):
             self.bound_args = {
                 "first": first,
                 "second": second,
@@ -178,7 +178,7 @@ def test_usage_generation():
             required: str,
             optional: str = "default",
             flag: bool = False,
-        ) -> None: ...
+        ): ...
 
     cmd = UsageCommand()
     assert cmd.usage == "<required> [--optional <value>] [--flag <value>]"
@@ -195,7 +195,7 @@ def test_inheritance():
             self,
             ctx: CommandContext,
             value: str,
-        ) -> None:
+        ):
             """Base implementation."""
             await ctx.output.print(value)
 
@@ -207,7 +207,7 @@ def test_inheritance():
             ctx: CommandContext,
             value: str,
             extra: str = "default",
-        ) -> None:
+        ):
             """Child implementation."""
             await ctx.output.print(f"{value} {extra}")
 

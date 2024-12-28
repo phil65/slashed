@@ -26,7 +26,7 @@ class PromptToolkitCompleter[T](Completer):
         self,
         commands: dict[str, BaseCommand],
         command_context: CommandContext[T] | None = None,
-    ) -> None:
+    ):
         """Initialize completer.
 
         Args:

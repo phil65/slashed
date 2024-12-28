@@ -12,10 +12,10 @@ from slashed.store import CommandStore
 class MockOutput:
     """Mock output writer for testing."""
 
-    def __init__(self) -> None:
+    def __init__(self):
         self.messages: list[str] = []
 
-    async def print(self, message: str) -> None:
+    async def print(self, message: str):
         """Record message."""
         self.messages.append(message)
 
@@ -42,7 +42,7 @@ async def test_basic_command_execution(
     store: CommandStore,
     context: CommandContext,
     output: MockOutput,
-) -> None:
+):
     """Test basic command execution."""
 
     # Define test command
@@ -50,7 +50,7 @@ async def test_basic_command_execution(
         ctx: CommandContext,
         args: list[str],
         kwargs: dict[str, str],
-    ) -> None:
+    ):
         name = args[0] if args else "World"
         await ctx.output.print(f"Hello, {name}!")
 
@@ -75,14 +75,14 @@ async def test_command_with_kwargs(
     store: CommandStore,
     context: CommandContext,
     output: MockOutput,
-) -> None:
+):
     """Test command execution with keyword arguments."""
 
     async def greet(
         ctx: CommandContext,
         args: list[str],
         kwargs: dict[str, str],
-    ) -> None:
+    ):
         name = kwargs.get("name", "World")
         prefix = kwargs.get("prefix", "Hello")
         await ctx.output.print(f"{prefix}, {name}!")
@@ -98,7 +98,7 @@ async def test_command_with_kwargs(
     assert output.messages == ["Hi, John!"]
 
 
-def test_parse_command() -> None:
+def test_parse_command():
     """Test command string parsing."""
     # Basic command
     result = parse_command("test")
@@ -125,7 +125,7 @@ def test_parse_command() -> None:
     assert result.args.kwargs == {"name": "John Doe"}
 
 
-def test_command_store_operations(store: CommandStore) -> None:
+def test_command_store_operations(store: CommandStore):
     """Test command store registration and retrieval."""
     cmd = Command(
         name="test",
@@ -150,7 +150,7 @@ def test_command_store_operations(store: CommandStore) -> None:
     assert cmd in store.list_commands()
 
 
-def test_parse_command_errors() -> None:
+def test_parse_command_errors():
     """Test command parsing error cases."""
     # Empty command
     with pytest.raises(CommandError, match="Empty command"):
@@ -168,13 +168,13 @@ def test_parse_command_errors() -> None:
 async def test_execute_unknown_command(
     store: CommandStore,
     context: CommandContext,
-) -> None:
+):
     """Test executing non-existent command."""
     with pytest.raises(CommandError, match="Unknown command: unknown"):
         await store.execute_command("unknown", context)
 
 
-async def test_context_creation(store: CommandStore, output: MockOutput) -> None:
+async def test_context_creation(store: CommandStore, output: MockOutput):
     """Test context creation with custom output."""
     ctx = store.create_context(data=None, output_writer=output)
     assert ctx.output is output

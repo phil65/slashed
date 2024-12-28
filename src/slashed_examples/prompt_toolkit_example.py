@@ -16,7 +16,7 @@ from slashed.store import CommandStore
 class PromptOutputWriter(DefaultOutputWriter):
     """Output writer that works with prompt_toolkit's patch_stdout."""
 
-    async def print(self, message: str) -> None:
+    async def print(self, message: str):
         """Print message using prompt_toolkit's print function."""
         from prompt_toolkit import print_formatted_text
 
@@ -30,7 +30,7 @@ class PromptOutputWriter(DefaultOutputWriter):
             print_formatted_text(message)
 
 
-async def main() -> None:
+async def main():
     """Run the example REPL."""
     # Initialize command store and context
     store = CommandStore()

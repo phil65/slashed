@@ -71,7 +71,7 @@ class GreetCommand(SlashedCommand):
         ctx: CommandContext,
         name: str = "World",
         greeting: str = "Hello",
-    ) -> None:
+    ):
         """Greet someone.
 
         Args:
@@ -107,7 +107,7 @@ Slashed offers two different styles for defining commands, each with its own adv
 ```python
 from slashed import Command, CommandContext
 
-async def add_worker(ctx: CommandContext, args: list[str], kwargs: dict[str, str]) -> None:
+async def add_worker(ctx: CommandContext, args: list[str], kwargs: dict[str, str]):
     """Add a worker to the pool."""
     worker_id = args[0]
     host = kwargs.get("host", "localhost")
@@ -147,7 +147,7 @@ class AddWorkerCommand(SlashedCommand):
         worker_id: str,          # required parameter
         host: str = "localhost", # optional with default
         port: int = 8080,       # optional with default
-    ) -> None:
+    ):
         """Add a new worker to the pool.
 
         Args:
@@ -204,7 +204,7 @@ async def admin_cmd(
     ctx: CommandContext[AppContext],
     args: list[str],
     kwargs: dict[str, str],
-) -> None:
+):
     if not ctx.data.is_admin:
         await ctx.output.print("Sorry, admin access required!")
         return

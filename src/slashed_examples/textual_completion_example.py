@@ -23,7 +23,7 @@ class DemoApp(App[None]):
     }
     """
 
-    def __init__(self) -> None:
+    def __init__(self):
         super().__init__()
         self.store = CommandStore()
         self.context = CommandContext(

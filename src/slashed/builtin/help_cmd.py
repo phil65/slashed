@@ -29,7 +29,7 @@ async def help_command(
     ctx: CommandContext,
     args: list[str],
     kwargs: dict[str, str],
-) -> None:
+):
     """Show available commands or detailed help for a specific command."""
     store = ctx.command_store
 
@@ -90,7 +90,7 @@ async def exit_command(
     ctx: CommandContext,
     args: list[str],
     kwargs: dict[str, str],
-) -> None:
+):
     """Exit the chat session."""
     msg = "Session ended."
     raise ExitCommandError(msg)
