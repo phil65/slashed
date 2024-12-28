@@ -42,30 +42,33 @@ class PromptToolkitCompleter[T](Completer):
         complete_event: Any,
     ) -> Iterator[Completion]:
         """Get completions for the current context."""
-        word_before_cursor = document.get_word_before_cursor()
+        text = document.text.lstrip()
 
-        # Create completion context with command context
+        if not text.startswith("/"):
+            return
+
+        # Create completion context
         completion_context = CompletionContext[T](
-            document,
+            document=document,
             command_context=self._command_context,
         )
 
-        # Command completion
-        if document.text.startswith("/"):
-            text = document.text[1:]  # remove slash
-            for name, cmd in self._commands.items():
-                if name.startswith(text):  # Match from start of command
-                    yield Completion(
-                        name,
-                        start_position=-len(text),  # Replace everything after slash
-                        display_meta=cmd.description,
-                    )
+        # If we have a command, use its completer
+        if " " in text:  # Has arguments
+            cmd_name = text.split()[0][1:]  # Remove slash
+            if (command := self._commands.get(cmd_name)) and (
+                completer := command.get_completer()
+            ):
+                for item in completer.get_completions(completion_context):
+                    yield item.to_prompt_toolkit(-len(completion_context.current_word))
             return
 
-        # If we have a command and it has a completer, use that
-        if " " in document.text and document.text.startswith("/"):
-            cmd_name = document.text.split()[0][1:]  # remove slash
-            command = self._commands.get(cmd_name)
-            if command and (completer := command.get_completer()):
-                for item in completer.get_completions(completion_context):
-                    yield item.to_prompt_toolkit(-len(word_before_cursor))
+        # Otherwise complete command names
+        word = text[1:]  # Remove slash
+        for name, cmd in self._commands.items():
+            if name.startswith(word):
+                yield Completion(
+                    name,
+                    start_position=-len(word),
+                    display_meta=cmd.description,
+                )
