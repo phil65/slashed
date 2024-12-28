@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     import os
 
     from slashed.base import BaseCommand
+    from slashed.commands import SlashedCommand
 
 
 T = TypeVar("T")
@@ -90,15 +91,19 @@ class CommandStore:
         meta = metadata or {}
         return CommandContext(output=writer, data=data, command_store=self, metadata=meta)
 
-    def register_command(self, command: BaseCommand):
+    def register_command(self, command: type[SlashedCommand] | BaseCommand) -> None:
         """Register a new command.
 
         Args:
-            command: Command to register
+            command: Command class (SlashedCommand subclass) or command instance
 
         Raises:
             ValueError: If command with same name exists
         """
+        # If given a class, instantiate it
+        if isinstance(command, type):
+            command = command()
+
         if command.name in self._commands:
             msg = f"Command '{command.name}' already registered"
             raise ValueError(msg)

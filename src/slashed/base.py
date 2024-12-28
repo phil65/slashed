@@ -60,19 +60,20 @@ type ExecuteFunc = Callable[[CommandContext, list[str], dict[str, str]], Awaitab
 class BaseCommand(ABC):
     """Abstract base class for commands."""
 
-    def __init__(
-        self,
-        name: str,
-        description: str,
-        category: str = "general",
-        usage: str | None = None,
-        help_text: str | None = None,
-    ) -> None:
-        self.name = name
-        self.description = description
-        self.category = category
-        self.usage = usage
-        self._help_text = help_text
+    name: str
+    """Command name"""
+
+    description: str
+    """Command description"""
+
+    category: str
+    """Command category"""
+
+    usage: str | None
+    """Command usage"""
+
+    _help_text: str | None
+    """Optional help text"""
 
     def get_completer(self) -> CompletionProvider | None:
         """Get completion provider for this command.
@@ -112,13 +113,11 @@ class Command(BaseCommand):
         help_text: str | None = None,
         completer: CompletionProvider | Callable[[], CompletionProvider] | None = None,
     ) -> None:
-        super().__init__(
-            name=name,
-            description=description,
-            category=category,
-            usage=usage,
-            help_text=help_text,
-        )
+        self.name = name
+        self.description = description
+        self.category = category
+        self.usage = usage
+        self._help_text = help_text
         self._execute_func = execute_func
         self._completer = completer
 

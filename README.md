@@ -56,42 +56,134 @@ pip install slashed
 ## Quick Example
 
 ```python
-from slashed import Command, CommandStore, CommandContext
+from slashed import SlashedCommand, CommandStore, CommandContext
 from slashed.completers import ChoiceCompleter
 
-# Create a command store
+# Define a command with explicit parameters
+class GreetCommand(SlashedCommand):
+    """Greet someone with a custom greeting."""
+
+    name = "greet"
+    category = "demo"
+
+    async def execute_command(
+        self,
+        ctx: CommandContext,
+        name: str = "World",
+        greeting: str = "Hello",
+    ) -> None:
+        """Greet someone.
+
+        Args:
+            ctx: Command context
+            name: Who to greet
+            greeting: Custom greeting to use
+        """
+        await ctx.output.print(f"{greeting}, {name}!")
+
+    def get_completer(self) -> ChoiceCompleter:
+        """Provide name suggestions."""
+        return ChoiceCompleter({
+            "World": "Default greeting target",
+            "Everyone": "Greet all users",
+            "Team": "Greet the team"
+        })
+
+# Create store and register the command
 store = CommandStore()
-
-# Define a command with completion support
-async def greet(ctx: CommandContext, args: list[str], kwargs: dict[str, str]) -> None:
-    name = args[0] if args else "World"
-    greeting = kwargs.get("greeting", "Hello")
-    await ctx.output.print(f"{greeting}, {name}!")
-
-greet_cmd = Command(
-    name="greet",
-    description="Greet someone",
-    execute_func=greet,
-    usage="[name] --greeting <greeting>",
-    help_text="Greet someone with a custom greeting.\n\nExample: /greet Phil --greeting Hi",
-    category="demo",
-    completer=ChoiceCompleter({
-        "World": "Default greeting target",
-        "Everyone": "Greet all users",
-        "Team": "Greet the team"
-    })
-)
-
-# Register the command
-store.register_command(greet_cmd)
-
-# Register built-in commands (help, etc)
-store.register_builtin_commands()
+store.register_command(GreetCommand)
 
 # Create context and execute a command
 ctx = store.create_context(data=None)
 await store.execute_command("greet Phil --greeting Hi", ctx)
 ```
+
+## Command Definition Styles
+
+Slashed offers two different styles for defining commands, each with its own advantages:
+
+### Traditional Style (using Command class)
+
+```python
+from slashed import Command, CommandContext
+
+async def add_worker(ctx: CommandContext, args: list[str], kwargs: dict[str, str]) -> None:
+    """Add a worker to the pool."""
+    worker_id = args[0]
+    host = kwargs.get("host", "localhost")
+    port = kwargs.get("port", "8080")
+    await ctx.output.print(f"Adding worker {worker_id} at {host}:{port}")
+
+cmd = Command(
+    name="add-worker",
+    description="Add a worker to the pool",
+    execute_func=add_worker,
+    usage="<worker_id> --host <host> --port <port>",
+    category="workers",
+)
+```
+
+#### Advantages:
+- Quick to create without inheritance
+- All configuration in one place
+- Easier to create commands dynamically
+- More flexible for simple commands
+- Familiar to users of other command frameworks
+
+### Declarative Style (using SlashedCommand)
+
+```python
+from slashed import SlashedCommand, CommandContext
+
+class AddWorkerCommand(SlashedCommand):
+    """Add a worker to the pool."""
+
+    name = "add-worker"
+    category = "workers"
+
+    async def execute_command(
+        self,
+        ctx: CommandContext,
+        worker_id: str,          # required parameter
+        host: str = "localhost", # optional with default
+        port: int = 8080,       # optional with default
+    ) -> None:
+        """Add a new worker to the pool.
+
+        Args:
+            ctx: Command context
+            worker_id: Unique worker identifier
+            host: Worker hostname
+            port: Worker port number
+        """
+        await ctx.output.print(f"Adding worker {worker_id} at {host}:{port}")
+```
+
+#### Advantages:
+- Type-safe parameter handling
+- Automatic usage generation from parameters
+- Help text generated from docstrings
+- Better IDE support with explicit parameters
+- More maintainable for complex commands
+- Validates required parameters automatically
+- Natural Python class structure
+- Parameters are self-documenting
+
+### When to Use Which?
+
+Use the **traditional style** when:
+- Creating simple commands with few parameters
+- Generating commands dynamically
+- Wanting to avoid class boilerplate
+- Need maximum flexibility
+
+Use the **declarative style** when:
+- Building complex commands with many parameters
+- Need type safety and parameter validation
+- Want IDE support for parameters
+- Documentation is important
+- Working in a larger codebase
+
 
 ## Generic Context Example
 
