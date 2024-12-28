@@ -6,12 +6,15 @@ from slashed.base import (
     BaseCommand,
     Command,
     CommandContext,
+    OutputWriter,
     ParsedCommand,
     ParsedCommandArgs,
     parse_command,
 )
+from slashed.commands import SlashedCommand
 from slashed.completion import CompletionContext, CompletionItem, CompletionProvider
 from slashed.completers import (
+    CallbackCompleter,
     ChainedCompleter,
     ChoiceCompleter,
     EnvVarCompleter,
@@ -26,27 +29,32 @@ from slashed.store import CommandStore
 
 __version__ = "0.5.1"
 
-__all__ = [
+__all__ = [  # noqa: RUF022
     # Core
     "BaseCommand",
-    # Completers
-    "ChainedCompleter",
-    "ChoiceCompleter",
     "Command",
     "CommandContext",
     "CommandError",
     "CommandStore",
+    "OutputWriter",
+    "ParsedCommand",
+    "ParsedCommandArgs",
+    "SlashedCommand",
+    "parse_command",
     # Completion
     "CompletionContext",
     "CompletionItem",
     "CompletionProvider",
-    "DefaultOutputWriter",
+    # Completers
+    "CallbackCompleter",
+    "ChainedCompleter",
+    "ChoiceCompleter",
     "EnvVarCompleter",
-    "ExitCommandError",
     "KeywordCompleter",
     "MultiValueCompleter",
-    "ParsedCommand",
-    "ParsedCommandArgs",
     "PathCompleter",
-    "parse_command",
+    # Output
+    "DefaultOutputWriter",
+    # Exceptions
+    "ExitCommandError",
 ]
