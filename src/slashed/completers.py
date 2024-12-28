@@ -21,9 +21,10 @@ type PathType = str | os.PathLike[str]
 
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Callable, Iterator, Sequence
 
     from slashed.completion import CompletionContext
+    from slashed.slashed_types import CompletionKind
 
 logger = get_logger(__name__)
 
@@ -306,3 +307,46 @@ class ChainedCompleter(CompletionProvider):
         """Get completions from all providers."""
         for provider in self.providers:
             yield from provider.get_completions(context)
+
+
+class CallbackCompleter(CompletionProvider):
+    """Completer that calls a function to get completions dynamically.
+
+    The callback can return either strings or CompletionItems.
+
+    Example:
+        def complete_tools(ctx: CompletionContext) -> Iterator[str]:
+            tools = ["hammer", "screwdriver", "wrench"]
+            return (t for t in tools if t.startswith(ctx.current_word))
+
+        command = Command(
+            name="use-tool",
+            description="Use a tool",
+            completer=CallbackCompleter(complete_tools)
+        )
+    """
+
+    def __init__(
+        self,
+        callback: Callable[[CompletionContext], Iterator[str | CompletionItem]],
+        kind: CompletionKind | None = None,
+    ) -> None:
+        """Initialize callback completer.
+
+        Args:
+            callback: Function that returns completions as strings or CompletionItems
+            kind: Optional kind to apply to string completions
+        """
+        self.callback = callback
+        self.kind = kind
+
+    def get_completions(
+        self,
+        context: CompletionContext,
+    ) -> Iterator[CompletionItem]:
+        """Get completions by calling the callback function."""
+        for item in self.callback(context):
+            if isinstance(item, str):
+                yield CompletionItem(text=item, kind=self.kind)
+            else:
+                yield item

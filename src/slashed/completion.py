@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 
 if TYPE_CHECKING:
@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from prompt_toolkit.document import Document
 
     from slashed.base import BaseCommand
+    from slashed.slashed_types import CompletionKind
 
 
 @dataclass
@@ -29,7 +30,7 @@ class CompletionItem:
     metadata: str | None = None
     """Additional information to show"""
 
-    kind: Literal["command", "file", "tool", "path", "env"] | None = None
+    kind: CompletionKind | None = None
     """Type of completion item"""
 
     sort_text: str | None = None
