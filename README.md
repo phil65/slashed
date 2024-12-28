@@ -36,15 +36,22 @@ A Python library for implementing slash commands with rich autocompletion suppor
 
 - Simple command registration system
 - Rich autocompletion support with multiple providers
+- Type-safe command and context handling:
+  - Generic typing for context data
+  - Type-checked command parameters
+  - Safe data access patterns
 - Built-in completers for:
   - File paths
-  - Environment variables
   - Choice lists
   - Keyword arguments
   - Multi-value inputs
+  - Callback based lists
+  - Environment variables
 - Extensible completion provider system
-- Type-safe with comprehensive type hints
-- Modern Python features (3.12+)
+- Modern Python features (requires Python 3.12+)
+- UI framework integration:
+  - Textual support
+  - prompt_toolkit support
 - Built-in help system
 
 ## Installation
@@ -56,10 +63,18 @@ pip install slashed
 ## Quick Example
 
 ```python
+from dataclasses import dataclass
 from slashed import SlashedCommand, CommandStore, CommandContext
 from slashed.completers import ChoiceCompleter
 
-# Define a command with explicit parameters
+
+# Define app state that will be available to commands
+@dataclass
+class AppState:
+    greeting_count: int = 0
+
+
+# Define a command with explicit parameters and typed context
 class GreetCommand(SlashedCommand):
     """Greet someone with a custom greeting."""
 
@@ -68,7 +83,7 @@ class GreetCommand(SlashedCommand):
 
     async def execute_command(
         self,
-        ctx: CommandContext,
+        ctx: CommandContext[AppState],
         name: str = "World",
         greeting: str = "Hello",
     ):
@@ -79,7 +94,12 @@ class GreetCommand(SlashedCommand):
             name: Who to greet
             greeting: Custom greeting to use
         """
-        await ctx.output.print(f"{greeting}, {name}!")
+        state = ctx.get_data()  # Type-safe access to app state
+        state.greeting_count += 1
+        await ctx.output.print(
+            f"{greeting}, {name}! "
+            f"(Greeted {state.greeting_count} times)"
+        )
 
     def get_completer(self) -> ChoiceCompleter:
         """Provide name suggestions."""
@@ -93,8 +113,10 @@ class GreetCommand(SlashedCommand):
 store = CommandStore()
 store.register_command(GreetCommand)
 
-# Create context and execute a command
-ctx = store.create_context(data=None)
+# Create context with app state
+ctx = store.create_context(data=AppState())
+
+# Execute a command
 await store.execute_command("greet Phil --greeting Hi", ctx)
 ```
 
@@ -205,10 +227,12 @@ async def admin_cmd(
     args: list[str],
     kwargs: dict[str, str],
 ):
-    if not ctx.data.is_admin:
+    """Admin-only command."""
+    state = ctx.get_data()  # Type-safe access to context data
+    if not state.is_admin:
         await ctx.output.print("Sorry, admin access required!")
         return
-    await ctx.output.print(f"Welcome admin {ctx.data.user_name}!")
+    await ctx.output.print(f"Welcome admin {state.user_name}!")
 
 
 # Create and register the command
@@ -231,6 +255,90 @@ ctx = store.create_context(
 # Execute command with typed context
 await store.execute_command("admin", ctx)
 ```
+
+## UI Integration Examples
+
+Slashed provides integrations for both prompt_toolkit and Textual:
+
+### Prompt Toolkit REPL
+
+```python
+from prompt_toolkit import PromptSession
+from slashed import CommandStore
+from slashed.prompt_toolkit_completer import PromptToolkitCompleter
+
+
+async def main():
+    """Run a simple REPL with command completion."""
+    # Initialize command store
+    store = CommandStore()
+    await store.initialize()
+
+    # Create session with command completion
+    completer = PromptToolkitCompleter(store=store)
+    session = PromptSession(completer=completer, complete_while_typing=True)
+
+    print("Type /help to list commands. Press Ctrl+D to exit.")
+
+    while True:
+        try:
+            text = await session.prompt_async(">>> ")
+            if text.startswith("/"):
+                await store.execute_command_with_context(text[1:])
+        except EOFError:  # Ctrl+D
+            break
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
+```
+
+### Textual App
+
+```python
+from dataclasses import dataclass
+from slashed.textual_adapter import SlashedApp
+
+
+@dataclass
+class AppState:
+    """Application state passed to commands."""
+    command_count: int = 0
+
+
+class DemoApp(SlashedApp[AppState, None]):
+    """Demo app showing command input with completion."""
+
+    CSS = """
+    Input {
+        margin: 1;
+    }
+    """
+
+    def __init__(self) -> None:
+        """Initialize app with typed state."""
+        super().__init__(data=AppState())
+
+    async def handle_input(self, value: str) -> None:
+        """Handle regular input by echoing it."""
+        state = self.context.get_data()
+        state.command_count += 1
+        await self.context.output.print(
+            f"Echo: {value} (command #{state.command_count})"
+        )
+
+
+if __name__ == "__main__":
+    app = DemoApp()
+    app.run()
+```
+
+Both integrations support:
+- Command completion
+- Command history
+- Typed context data
+- Rich output formatting
+
 
 ## Documentation
 
