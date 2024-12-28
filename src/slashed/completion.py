@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from slashed.base import BaseCommand, CommandContext
     from slashed.slashed_types import CompletionKind
 
-T = TypeVar("T", default=Any)
+TCommandData = TypeVar("TCommandData", default=Any)
 
 logger = get_logger(__name__)
 
@@ -57,13 +57,18 @@ class CompletionItem:
         )
 
 
-class CompletionContext[T]:
-    """Context for completion operations."""
+class CompletionContext[TCommandData]:
+    """Context for completion operations.
+
+    Type Parameters:
+        TCommandData: Type of the data in the associated CommandContext. Used when
+                     completions need to access the command context data.
+    """
 
     def __init__(
         self,
         document: Document,
-        command_context: CommandContext[T] | None = None,
+        command_context: CommandContext[TCommandData] | None = None,
     ):
         """Initialize completion context.
 
@@ -80,7 +85,7 @@ class CompletionContext[T]:
         self._parse_document()
 
     @property
-    def command_context(self) -> CommandContext[T]:
+    def command_context(self) -> CommandContext[TCommandData]:
         """Get command execution context.
 
         Returns:

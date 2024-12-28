@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
     from slashed.store import CommandStore
 
-T = TypeVar("T")
+TData = TypeVar("TData")
 
 
 class OutputWriter(Protocol):
@@ -29,13 +29,32 @@ class OutputWriter(Protocol):
 
 
 @dataclass
-class CommandContext[T]:
-    """Context passed to command handlers."""
+class CommandContext[TData]:
+    """Context passed to command handlers.
+
+    Type Parameters:
+        TData: Type of the data available to commands. Access via get_data()
+               for type-safe operations.
+    """
 
     output: OutputWriter
-    data: T | None
+    data: TData | None
     command_store: CommandStore
     metadata: dict[str, Any] = field(default_factory=dict)
+
+    def get_data(self) -> TData:
+        """Get context data, asserting it's not None.
+
+        Returns:
+            The context data
+
+        Raises:
+            RuntimeError: If data is None
+        """
+        if self.data is None:
+            msg = "Context data is None"
+            raise RuntimeError(msg)
+        return self.data
 
 
 @dataclass

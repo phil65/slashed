@@ -15,7 +15,9 @@ class AppState:
     last_input: str = ""
 
 
-class DemoApp(SlashedApp[None]):
+class DemoApp(
+    SlashedApp[AppState, None]
+):  # Pass AppState as context type, None as result type
     """Demo app showing command input with completion."""
 
     CSS = """
@@ -26,12 +28,16 @@ class DemoApp(SlashedApp[None]):
 
     def __init__(self) -> None:
         """Initialize app with typed state."""
-        super().__init__()  # Context data will be typed as Any
+        super().__init__(data=AppState())
 
     async def handle_input(self, value: str) -> None:
         """Handle regular input by echoing it."""
-        _state = self.context.data  # <- this is Any | None right now
-        await self.context.output.print(f"Echo: {value}")
+        # Here the type checker would know self.context.data is AppState
+        # and provide completion/type checking for its attributes
+        state = self.context.get_data()
+        state.command_count += 1  # Type checker would know this exists
+
+        await self.context.output.print(f"Echo: {value} (command #{state.command_count})")
 
 
 if __name__ == "__main__":

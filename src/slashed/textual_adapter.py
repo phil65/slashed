@@ -10,7 +10,6 @@ from textual.suggester import Suggester
 from textual.widgets import Input
 from typing_extensions import TypeVar
 
-from slashed.completers import ChoiceCompleter
 from slashed.completion import CompletionContext
 from slashed.output import DefaultOutputWriter
 from slashed.store import CommandStore
@@ -66,45 +65,66 @@ class SlashedSuggester(Suggester):
             return completion.text
 
 
-class SlashedApp[TResult](App[TResult]):
-    """Base app with slash command support."""
+class SlashedApp[TContext, TResult](App[TResult]):  # type: ignore[type-var]
+    """Base app with slash command support.
+
+    This app provides slash command functionality with optional typed context data.
+    Commands can access the context data through self.context.get_data().
+
+    Type Parameters:
+        TContext: Type of the command context data. When using typed context,
+                 access it via self.context.get_data() to get proper type checking.
+        TResult: Type of value returned by app.run(). Use None if the app
+                doesn't return anything.
+
+    Example:
+        ```python
+        @dataclass
+        class AppState:
+            count: int = 0
+
+        class MyApp(SlashedApp[AppState, None]):
+            def __init__(self) -> None:
+                super().__init__(data=AppState())
+
+            async def handle_input(self, value: str) -> None:
+                state = self.context.get_data()  # typed as AppState
+                state.count += 1  # type safe access
+        ```
+    """
 
     def __init__(
         self,
         store: CommandStore | None = None,
+        data: TContext | None = None,
         *args: Any,
         **kwargs: Any,
-    ):
+    ) -> None:
         """Initialize app with command store.
 
         Args:
             store: Optional command store, creates new one if not provided
+            data: Optional data for command context
             *args: Arguments passed to textual.App
             **kwargs: Keyword arguments passed to textual.App
         """
         super().__init__(*args, **kwargs)
         self.store = store or CommandStore()
-        self.context: CommandContext[Any] = self.store.create_context(
-            data=None, output_writer=DefaultOutputWriter()
+        self.context: CommandContext[TContext] = self.store.create_context(
+            data=data, output_writer=DefaultOutputWriter()
         )
 
-    async def on_mount(self):
+    async def on_mount(self) -> None:
         """Initialize command store when app is mounted."""
         await self.store.initialize()
 
-        # No need to check for completer anymore
-        # Just initialize the app's base functionality
-
     def compose(self) -> ComposeResult:
         """Create command input."""
-        # Create input with a suggester for slash commands
-        choices = {f"/{cmd.name}": cmd.description for cmd in self.store.list_commands()}
-        completer = ChoiceCompleter(choices)
-        suggester = SlashedSuggester(provider=completer, context=self.context)
-        msg = "Type a command (starts with /) or text..."
-        yield Input(placeholder=msg, id="command-input", suggester=suggester)
+        yield Input(
+            placeholder="Type a command (starts with /) or text...", id="command-input"
+        )
 
-    async def on_input_submitted(self, event: Input.Submitted):
+    async def on_input_submitted(self, event: Input.Submitted) -> None:
         """Handle input submission."""
         if event.value.startswith("/"):
             # Remove leading slash and execute
@@ -122,5 +142,5 @@ class SlashedApp[TResult](App[TResult]):
         # Let subclasses handle non-command input
         await self.handle_input(event.value)
 
-    async def handle_input(self, value: str):
+    async def handle_input(self, value: str) -> None:
         """Override this to handle non-command input."""

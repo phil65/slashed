@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from slashed.commands import SlashedCommand
 
 
-T = TypeVar("T")
+TContextData = TypeVar("TContextData")
 logger = get_logger(__name__)
 
 
@@ -74,12 +74,12 @@ class CommandStore:
             history = history[::-1]
         return history[:limit] if limit else history
 
-    def create_context[T](
+    def create_context[TContextData](
         self,
-        data: T | None,
+        data: TContextData | None,
         output_writer: OutputWriter | None = None,
         metadata: dict[str, Any] | None = None,
-    ) -> CommandContext[T]:
+    ) -> CommandContext[TContextData]:
         """Create a command execution context.
 
         Args:

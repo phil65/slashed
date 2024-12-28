@@ -16,16 +16,21 @@ if TYPE_CHECKING:
 
     from slashed import BaseCommand
 
-T = TypeVar("T")
+TContextData = TypeVar("TContextData")
 
 
-class PromptToolkitCompleter[T](Completer):
-    """Adapts our completion system to prompt-toolkit."""
+class PromptToolkitCompleter[TContextData](Completer):
+    """Adapts our completion system to prompt-toolkit.
+
+    Type Parameters:
+        TContextData: Type of the data in the associated CommandContext. Used when
+                     completions need to access typed context data.
+    """
 
     def __init__(
         self,
         commands: dict[str, BaseCommand],
-        command_context: CommandContext[T] | None = None,
+        command_context: CommandContext[TContextData] | None = None,
     ):
         """Initialize completer.
 
@@ -49,7 +54,9 @@ class PromptToolkitCompleter[T](Completer):
 
         # Create completion context
         ctx = self._command_context
-        completion_context = CompletionContext[T](document=document, command_context=ctx)
+        completion_context = CompletionContext[TContextData](
+            document=document, command_context=ctx
+        )
 
         # If we have a command, use its completer
         if " " in text:  # Has arguments
