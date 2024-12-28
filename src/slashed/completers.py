@@ -347,6 +347,6 @@ class CallbackCompleter(CompletionProvider):
         """Get completions by calling the callback function."""
         for item in self.callback(context):
             if isinstance(item, str):
-                yield CompletionItem(text=item, kind=self.kind)
+                yield CompletionItem(text=item, kind=self.kind)  # pyright: ignore
             else:
                 yield item
