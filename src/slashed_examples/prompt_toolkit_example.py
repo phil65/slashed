@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+from typing import Any
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.formatted_text import ANSI
 from prompt_toolkit.patch_stdout import patch_stdout
 
 from slashed.output import DefaultOutputWriter
-from slashed.prompt_toolkit_completion import PromptToolkitCompleter
+from slashed.prompt_toolkit_completer import PromptToolkitCompleter
 from slashed.store import CommandStore
 
 
@@ -32,21 +33,15 @@ class PromptOutputWriter(DefaultOutputWriter):
 
 async def main():
     """Run the example REPL."""
-    # Initialize command store and context
+    # Initialize command store
     store = CommandStore()
     await store.initialize()
 
-    context = store.create_context(
-        data=None, output_writer=PromptOutputWriter(force_terminal=True)
-    )
+    writer = PromptOutputWriter(force_terminal=True)
 
     # Create prompt session with our completer
-    session = PromptSession(
-        completer=PromptToolkitCompleter(
-            commands=store._commands, command_context=context
-        ),
-        complete_while_typing=True,
-    )
+    completer = PromptToolkitCompleter[Any](store=store, output_writer=writer)
+    session = PromptSession(completer=completer, complete_while_typing=True)
 
     # Run the REPL
     print("Type /help to list commands. Press Ctrl+D to exit.")
@@ -59,7 +54,10 @@ async def main():
 
                 if text.startswith("/"):
                     # Execute command without slash
-                    await store.execute_command(text[1:], context)
+                    await store.execute_command_with_context(
+                        text[1:],
+                        output_writer=writer,
+                    )
                 else:
                     print(f"Echo: {text}")
 

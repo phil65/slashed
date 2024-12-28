@@ -33,7 +33,7 @@ class CommandContext[T]:
     """Context passed to command handlers."""
 
     output: OutputWriter
-    data: T
+    data: T | None
     command_store: CommandStore
     metadata: dict[str, Any] = field(default_factory=dict)
 

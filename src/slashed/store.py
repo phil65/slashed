@@ -74,9 +74,9 @@ class CommandStore:
             history = history[::-1]
         return history[:limit] if limit else history
 
-    def create_context(
+    def create_context[T](
         self,
-        data: T,
+        data: T | None,
         output_writer: OutputWriter | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> CommandContext[T]:
@@ -210,14 +210,21 @@ class CommandStore:
             msg = f"Command execution failed: {e}"
             raise CommandError(msg) from e
 
-    async def execute_command_with_context(
+    async def execute_command_with_context[T](
         self,
         command_str: str,
-        context: Any,
+        context: T | None = None,  # type: ignore[type-var]
         output_writer: OutputWriter | None = None,
         metadata: dict[str, Any] | None = None,
-    ):
-        """Execute a command with a custom context."""
+    ) -> None:
+        """Execute a command with a custom context.
+
+        Args:
+            command_str: Command string to execute (without leading slash)
+            context: Custom context data
+            output_writer: Optional custom output writer
+            metadata: Additional metadata
+        """
         ctx = self.create_context(
             context,
             output_writer=output_writer,
