@@ -315,10 +315,6 @@ class DemoApp(SlashedApp[AppState, None]):
     }
     """
 
-    def __init__(self) -> None:
-        """Initialize app with typed state."""
-        super().__init__(data=AppState())
-
     async def handle_input(self, value: str) -> None:
         """Handle regular input by echoing it."""
         state = self.context.get_data()
@@ -329,7 +325,8 @@ class DemoApp(SlashedApp[AppState, None]):
 
 
 if __name__ == "__main__":
-    app = DemoApp()
+    state = AppState(user_name="Admin")
+    app = DemoApp(data=state)
     app.run()
 ```
 
