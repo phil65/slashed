@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from prompt_toolkit.completion import Completion
     from prompt_toolkit.document import Document
 
-    from slashed.base import BaseCommand
+    from slashed.base import BaseCommand, CommandContext
     from slashed.slashed_types import CompletionKind
 
 
@@ -49,12 +49,15 @@ class CompletionItem:
         )
 
 
+@dataclass
 class CompletionContext:
     """Context for completion operations."""
 
-    def __init__(self, document: Document) -> None:
-        """Initialize completion context from document."""
-        self.document = document
+    document: Document
+    command_context: CommandContext | None = None
+
+    def __post_init__(self) -> None:
+        """Initialize parsed data."""
         self._parse_document()
 
     def _parse_document(self) -> None:

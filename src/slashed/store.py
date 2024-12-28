@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from slashed.base import CommandContext, OutputWriter, parse_command
+from slashed.completion import CompletionContext
 from slashed.exceptions import CommandError
 from slashed.log import get_logger
 from slashed.output import DefaultOutputWriter
@@ -17,6 +18,8 @@ except ImportError:
 
 if TYPE_CHECKING:
     import os
+
+    from prompt_toolkit.document import Document
 
     from slashed.base import BaseCommand
     from slashed.commands import SlashedCommand
@@ -90,6 +93,14 @@ class CommandStore:
         writer = output_writer or DefaultOutputWriter()
         meta = metadata or {}
         return CommandContext(output=writer, data=data, command_store=self, metadata=meta)
+
+    def create_completion_context(
+        self,
+        document: Document,
+        command_context: CommandContext | None = None,
+    ) -> CompletionContext:
+        """Create a completion context."""
+        return CompletionContext(document, command_context)
 
     def register_command(self, command: type[SlashedCommand] | BaseCommand) -> None:
         """Register a new command.
