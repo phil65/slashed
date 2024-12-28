@@ -21,7 +21,7 @@ type PathType = str | os.PathLike[str]
 
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator, Sequence
+    from collections.abc import Callable, Iterable, Iterator, Sequence
 
     from slashed.completion import CompletionContext
     from slashed.slashed_types import CompletionKind
@@ -328,7 +328,7 @@ class CallbackCompleter(CompletionProvider):
 
     def __init__(
         self,
-        callback: Callable[[CompletionContext], Iterator[str | CompletionItem]],
+        callback: Callable[[CompletionContext], Iterable[str | CompletionItem]],
         kind: CompletionKind | None = None,
     ) -> None:
         """Initialize callback completer.
