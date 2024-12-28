@@ -73,9 +73,8 @@ class SlashedApp(App[None]):
         """Initialize app with command store."""
         super().__init__()
         self.store = store or CommandStore()
-        self.context = self.store.create_context(
-            data=None, output_writer=DefaultOutputWriter()
-        )
+        writer = DefaultOutputWriter()
+        self.context = self.store.create_context(data=None, output_writer=writer)
 
     async def on_mount(self) -> None:
         """Initialize command store when app is mounted."""
@@ -87,16 +86,11 @@ class SlashedApp(App[None]):
     def compose(self) -> ComposeResult:
         """Create command input."""
         # Create input with a suggester for slash commands
-        yield Input(
-            placeholder="Type a command (starts with /) or text...",
-            id="command-input",
-            suggester=SlashedSuggester(
-                provider=ChoiceCompleter({
-                    f"/{cmd.name}": cmd.description for cmd in self.store.list_commands()
-                }),
-                context=self.context,
-            ),
-        )
+        choices = {f"/{cmd.name}": cmd.description for cmd in self.store.list_commands()}
+        completer = ChoiceCompleter(choices)
+        suggester = SlashedSuggester(provider=completer, context=self.context)
+        msg = "Type a command (starts with /) or text..."
+        yield Input(placeholder=msg, id="command-input", suggester=suggester)
 
     async def on_input_submitted(self, event: Input.Submitted) -> None:
         """Handle input submission."""

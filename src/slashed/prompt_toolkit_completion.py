@@ -48,10 +48,8 @@ class PromptToolkitCompleter[T](Completer):
             return
 
         # Create completion context
-        completion_context = CompletionContext[T](
-            document=document,
-            command_context=self._command_context,
-        )
+        ctx = self._command_context
+        completion_context = CompletionContext[T](document=document, command_context=ctx)
 
         # If we have a command, use its completer
         if " " in text:  # Has arguments
@@ -67,8 +65,5 @@ class PromptToolkitCompleter[T](Completer):
         word = text[1:]  # Remove slash
         for name, cmd in self._commands.items():
             if name.startswith(word):
-                yield Completion(
-                    name,
-                    start_position=-len(word),
-                    display_meta=cmd.description,
-                )
+                pos = -len(word)
+                yield Completion(name, start_position=pos, display_meta=cmd.description)
