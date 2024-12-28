@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
+from typing_extensions import TypeVar
 
 
 if TYPE_CHECKING:
@@ -15,6 +17,8 @@ if TYPE_CHECKING:
 
     from slashed.base import BaseCommand, CommandContext
     from slashed.slashed_types import CompletionKind
+
+T = TypeVar("T", default=Any)
 
 
 @dataclass
@@ -49,33 +53,63 @@ class CompletionItem:
         )
 
 
-@dataclass
-class CompletionContext:
+class CompletionContext[T]:
     """Context for completion operations."""
 
-    document: Document
-    command_context: CommandContext | None = None
+    def __init__(
+        self,
+        document: Document,
+        command_context: CommandContext[T] | None = None,
+    ) -> None:
+        """Initialize completion context.
 
-    def __post_init__(self) -> None:
-        """Initialize parsed data."""
+        Args:
+            document: Current document being completed
+            command_context: Optional command execution context
+        """
+        self._document = document
+        self._command_context = command_context
+        self._command_name: str | None = None
+        self._args: list[str] = []
+        self._current_word: str = ""
+        self._arg_position: int = 0
         self._parse_document()
+
+    @property
+    def command_context(self) -> CommandContext[T]:
+        """Get command execution context.
+
+        Returns:
+            Command context
+
+        Raises:
+            RuntimeError: If command context is not set
+        """
+        if self._command_context is None:
+            msg = "No command context available"
+            raise RuntimeError(msg)
+        return self._command_context
+
+    def has_command_context(self) -> bool:
+        """Check if command context is available."""
+        return self._command_context is not None
 
     def _parse_document(self) -> None:
         """Parse document into command and arguments."""
-        text = self.document.text.lstrip()
+        text = self._document.text.lstrip()
 
         if not text.startswith("/"):
             self._command_name = None
             self._args = []
-            self._current_word = self.document.get_word_before_cursor()
+            self._current_word = self._document.get_word_before_cursor()
             self._arg_position = 0
             return
 
         parts = text[1:].split()
         self._command_name = parts[0] if parts else None
         self._args = parts[1:]
-        self._current_word = self.document.get_word_before_cursor()
-        self._arg_position = len(text[: self.document.cursor_position].split()) - 1
+        self._current_word = self._document.get_word_before_cursor()
+        self._arg_position = len(text[: self._document.cursor_position].split()) - 1
 
     @property
     def command_name(self) -> str | None:
