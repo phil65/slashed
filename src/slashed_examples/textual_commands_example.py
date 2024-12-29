@@ -9,6 +9,7 @@ from textual.containers import Container, VerticalScroll
 from textual.widgets import Header, Input, Label
 
 from slashed import ChoiceCompleter, SlashedCommand
+from slashed.store import CommandStore
 from slashed.textual_adapter import SlashedApp
 
 
@@ -104,6 +105,7 @@ class DemoApp(SlashedApp[AppState, None]):
 
 
 if __name__ == "__main__":
+    store = CommandStore(enable_system_commands=True)
     state = AppState(user_name="Admin")
-    app = DemoApp(data=state, commands=[GreetCommand])
+    app = DemoApp(store=store, data=state, commands=[GreetCommand])
     app.run()

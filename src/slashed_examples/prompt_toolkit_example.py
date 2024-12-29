@@ -34,7 +34,7 @@ class PromptOutputWriter(DefaultOutputWriter):
 async def main():
     """Run the example REPL."""
     # Initialize command store
-    store = CommandStore()
+    store = CommandStore(enable_system_commands=True)
     await store.initialize()
 
     writer = PromptOutputWriter(force_terminal=True)

@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from slashed.base import CommandContext, OutputWriter, parse_command
+from slashed.builtin import get_system_commands
 from slashed.completion import CompletionContext
 from slashed.exceptions import CommandError
 from slashed.log import get_logger
@@ -32,15 +33,23 @@ logger = get_logger(__name__)
 class CommandStore:
     """Central store for command management and history."""
 
-    def __init__(self, history_file: str | os.PathLike[str] | None = None):
+    def __init__(
+        self,
+        history_file: str | os.PathLike[str] | None = None,
+        *,
+        enable_system_commands: bool = False,
+    ):
         """Initialize command store.
 
         Args:
             history_file: Optional path to history file
+            enable_system_commands: Whether to enable system execution commands.
+                                  Disabled by default for security.
         """
         self._commands: dict[str, BaseCommand] = {}
         self._command_history: list[str] = []
         self._history_path = Path(history_file) if history_file else None
+        self._enable_system_commands = enable_system_commands
         self._initialized = False
         if self._history_path:
             self._history_path.parent.mkdir(parents=True, exist_ok=True)
@@ -246,3 +255,8 @@ class CommandStore:
         logger.debug("Registering builtin commands")
         for command in get_builtin_commands():
             self.register_command(command)
+
+        # System commands only if enabled
+        if self._enable_system_commands:
+            for command in get_system_commands():
+                self.register_command(command)
