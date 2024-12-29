@@ -113,16 +113,19 @@ class SlashedSuggester(Suggester):
                 cmd_name = value.split()[0][1:]  # Remove slash
                 if command := self._store.get_command(cmd_name):  # noqa: SIM102
                     if completer := command.get_completer():
-                        try:
-                            completion = next(
-                                completer.get_completions(completion_context)
-                            )
-                            # For argument completion, we need to preserve the cmd part
-                            cmd_part = value[: value.find(" ") + 1]
-                        except StopIteration:
-                            return None
-                        else:
-                            return f"{cmd_part}{completion.text}"
+                        current_word = completion_context.current_word
+                        # Find first matching completion
+                        for completion in completer.get_completions(completion_context):
+                            if not current_word or completion.text.startswith(
+                                current_word
+                            ):
+                                # For argument completion, preserve the cmd part
+                                cmd_part = value[: value.find(" ") + 1]
+                                # If we have a current word, replace it
+                                if current_word:
+                                    cmd_part = value[: -len(current_word)]
+                                return f"{cmd_part}{completion.text}"
+                        return None
 
                 return None
 

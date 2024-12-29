@@ -75,10 +75,14 @@ class PromptToolkitCompleter[TContextData](Completer):
                 if (command := self._store.get_command(cmd_name)) and (
                     completer := command.get_completer()
                 ):
+                    current_word = completion_context.current_word
                     for item in completer.get_completions(completion_context):
-                        start_pos = -len(completion_context.current_word)
+                        # Filter completions based on current word
+                        if current_word and not item.text.startswith(current_word):
+                            continue
+                        start_pos = -len(current_word) if current_word else 0
                         yield item.to_prompt_toolkit(start_pos)
-                return
+                    return
 
             # Otherwise complete command names
             word = text[1:]  # Remove slash
