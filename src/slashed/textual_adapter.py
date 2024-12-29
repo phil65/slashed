@@ -10,7 +10,7 @@ from textual.containers import VerticalScroll
 from textual.suggester import Suggester
 from textual.widgets import Input, Label
 
-from slashed.base import OutputWriter
+from slashed.base import BaseCommand, OutputWriter
 from slashed.completion import CompletionContext
 from slashed.log import get_logger
 from slashed.store import CommandStore
@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
     from slashed.base import CommandContext
+    from slashed.commands import SlashedCommand
 
 logger = get_logger(__name__)
 
@@ -171,16 +172,31 @@ class SlashedApp[TContext, TResult](App[TResult]):  # type: ignore[type-var]
         self,
         store: CommandStore | None = None,
         data: TContext | None = None,
+        commands: list[type[SlashedCommand] | BaseCommand] | None = None,
         *args: Any,
         **kwargs: Any,
     ) -> None:
-        """Initialize app with command store."""
+        """Initialize app with command store.
+
+        Args:
+            data: Optional context data
+            commands: Optional list of commands to register
+            store: Optional command store (creates new one if not provided)
+            *args: Arguments passed to textual.App
+            **kwargs: Keyword arguments passed to textual.App
+        """
         super().__init__(*args, **kwargs)
         self.store = store or CommandStore()
         self.store._initialize_sync()
-        self.context = self.store.create_context(
-            data=data, output_writer=TextualOutputWriter(self)
-        )
+        writer = TextualOutputWriter(self)
+        self.context = self.store.create_context(data=data, output_writer=writer)
+        if commands:
+            for command in commands:
+                self.store.register_command(command)
+
+    def get_suggester(self) -> SlashedSuggester:
+        """Get a suggester configured for this app's store and context."""
+        return SlashedSuggester(store=self.store, context=self.context)
 
     def bind_output(
         self, output_id: str, widget_query: str, default: bool = False

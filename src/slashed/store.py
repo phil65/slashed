@@ -45,7 +45,7 @@ class CommandStore:
         if self._history_path:
             self._history_path.parent.mkdir(parents=True, exist_ok=True)
 
-    def _initialize_sync(self) -> None:
+    def _initialize_sync(self):
         """Initialize the store synchronously."""
         if self._initialized:
             return
@@ -62,7 +62,7 @@ class CommandStore:
         self.register_builtin_commands()
         self._initialized = True
 
-    async def initialize(self) -> None:
+    async def initialize(self):
         """Initialize the store (async wrapper for backward compatibility)."""
         self._initialize_sync()
 
@@ -153,10 +153,7 @@ class CommandStore:
         """
         return self._commands.get(name)
 
-    def list_commands(
-        self,
-        category: str | None = None,
-    ) -> list[BaseCommand]:
+    def list_commands(self, category: str | None = None) -> list[BaseCommand]:
         """List all commands, optionally filtered by category.
 
         Args:
@@ -226,7 +223,7 @@ class CommandStore:
         context: T | None = None,  # type: ignore[type-var]
         output_writer: OutputWriter | None = None,
         metadata: dict[str, Any] | None = None,
-    ) -> None:
+    ):
         """Execute a command with a custom context.
 
         Args:

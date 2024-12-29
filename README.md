@@ -299,7 +299,7 @@ if __name__ == "__main__":
 from dataclasses import dataclass
 
 from slashed import ChoiceCompleter, SlashedCommand
-from slashed.textual_adapter import SlashedApp, SlashedSuggester
+from slashed.textual_adapter import SlashedApp
 from textual.containers import Container, VerticalScroll
 from textual.widgets import Input, Label
 
@@ -315,11 +315,7 @@ class GreetCommand(SlashedCommand):
     name = "greet"
     category = "demo"
 
-    async def execute_command(
-        self,
-        ctx: CommandContext[AppState],
-        name: str = "World",
-    ) -> None:
+    async def execute_command(self, ctx: CommandContext[AppState], name: str = "World"):
         state = ctx.get_data()
         await ctx.output.print(f"Hello, {name}! (from {state.user_name})")
 
@@ -330,21 +326,10 @@ class GreetCommand(SlashedCommand):
 class DemoApp(SlashedApp[AppState, None]):
     """App with slash commands and completion."""
 
-    def __init__(self) -> None:
-        super().__init__(data=AppState(user_name="Admin"))
-        self.store.register_command(GreetCommand)
-
     def compose(self) -> ComposeResult:
         # Command input with completion
-        yield Container(
-            Input(
-                id="command-input",
-                suggester=SlashedSuggester(
-                    store=self.store,
-                    context=self.context,
-                ),
-            )
-        )
+        suggester = self.get_suggester()
+        yield Container(Input(id="command-input", suggester=suggester))
         # Output areas
         yield VerticalScroll(id="main-output")
         yield Label(id="status")
@@ -355,7 +340,8 @@ class DemoApp(SlashedApp[AppState, None]):
 
 
 if __name__ == "__main__":
-    app = DemoApp()
+    state = AppState(user_name="Admin")
+    app = DemoApp(data=state, commands=[GreetCommand])
     app.run()
 ```
 
@@ -368,7 +354,7 @@ Both integrations support:
 
 ## Documentation
 
-For full documentation including advanced usage and API reference, visit [slashed.readthedocs.io](https://phil65.github.io/slashed).
+For full documentation including advanced usage and API reference, visit [phil65.github.io/slashed](https://phil65.github.io/slashed).
 
 ## Contributing
 

@@ -9,7 +9,7 @@ from textual.containers import Container, VerticalScroll
 from textual.widgets import Header, Input, Label
 
 from slashed import ChoiceCompleter, SlashedCommand
-from slashed.textual_adapter import SlashedApp, SlashedSuggester
+from slashed.textual_adapter import SlashedApp
 
 
 if TYPE_CHECKING:
@@ -39,11 +39,7 @@ class GreetCommand(SlashedCommand):
     name = "greet"
     category = "demo"
 
-    async def execute_command(
-        self,
-        ctx: CommandContext[AppState],  # Type hint ensures proper state typing
-        name: str = "World",
-    ) -> None:
+    async def execute_command(self, ctx: CommandContext[AppState], name: str = "World"):
         """Greet someone."""
         state = ctx.get_data()  # Type-safe access to AppState
         await ctx.output.print(f"Hello, {name}! (from {state.user_name})")
@@ -73,13 +69,6 @@ class DemoApp(SlashedApp[AppState, None]):
     }
     """
 
-    def __init__(self, data: AppState | None = None) -> None:
-        """Initialize app with custom command."""
-        # Initialize SlashedApp with our state
-        super().__init__(data=data)
-        # Register our command - will be available as /greet
-        self.store.register_command(GreetCommand)
-
     def on_mount(self) -> None:
         """Set up output routing after widgets are mounted."""
         # Connect command output to specific widgets:
@@ -93,10 +82,7 @@ class DemoApp(SlashedApp[AppState, None]):
         yield Header()
 
         # Create input with command completion
-        suggester = SlashedSuggester(
-            store=self.store,  # Provides command completion
-            context=self.context,  # Needed for command arg completion
-        )
+        suggester = self.get_suggester()
         msg = "Type /help or /greet <name>"
         input_widget = Input(placeholder=msg, id=INPUT_ID, suggester=suggester)
         yield Container(input_widget)
@@ -119,5 +105,5 @@ class DemoApp(SlashedApp[AppState, None]):
 
 if __name__ == "__main__":
     state = AppState(user_name="Admin")
-    app = DemoApp(data=state)
+    app = DemoApp(data=state, commands=[GreetCommand])
     app.run()
