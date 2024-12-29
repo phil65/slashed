@@ -209,7 +209,7 @@ class CommandCompleter:
         command = self._commands.get(context.command_name)
         if command and (completer := command.get_completer()):
             logger.debug("Fetching completions for command %s", command.name)
-            yield from completer.get_completions(context)
+            yield from completer.get_completions(context)  # type: ignore
 
         # Get global completions
         for provider in self._global_providers:
