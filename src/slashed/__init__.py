@@ -27,7 +27,7 @@ from slashed.output import DefaultOutputWriter
 from slashed.store import CommandStore
 
 
-__version__ = "0.6.1"
+__version__ = "0.7.0"
 
 __all__ = [  # noqa: RUF022
     # Core
