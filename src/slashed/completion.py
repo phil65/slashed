@@ -14,7 +14,6 @@ from slashed.log import get_logger
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from prompt_toolkit.completion import Completion
     from prompt_toolkit.document import Document
 
     from slashed.base import BaseCommand, CommandContext
@@ -43,18 +42,6 @@ class CompletionItem:
 
     sort_text: str | None = None
     """Optional text to use for sorting (defaults to text)"""
-
-    def to_prompt_toolkit(self, start_position: int) -> Completion:
-        """Convert to prompt_toolkit completion."""
-        from prompt_toolkit.completion import Completion
-
-        display = self.display or self.text
-        return Completion(
-            self.text,
-            start_position=start_position,
-            display=display,
-            display_meta=self.metadata,
-        )
 
 
 class CompletionContext[TCommandData]:

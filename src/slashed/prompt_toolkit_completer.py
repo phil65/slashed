@@ -10,6 +10,7 @@ from typing_extensions import TypeVar
 from slashed import CommandContext, CompletionContext
 from slashed.log import get_logger
 from slashed.store import CommandStore
+from slashed.utils import get_first_line
 
 
 if TYPE_CHECKING:
@@ -77,18 +78,23 @@ class PromptToolkitCompleter[TContextData](Completer):
                 ):
                     current_word = completion_context.current_word
                     for item in completer.get_completions(completion_context):
-                        # Filter completions based on current word
                         if current_word and not item.text.startswith(current_word):
                             continue
                         start_pos = -len(current_word) if current_word else 0
-                        yield item.to_prompt_toolkit(start_pos)
+                        yield Completion(
+                            item.text,
+                            start_pos,
+                            display_meta=get_first_line(item.metadata),
+                        )
                     return
 
             # Otherwise complete command names
             word = text[1:]  # Remove slash
             for cmd in self._store.list_commands():
                 if cmd.name.startswith(word):
-                    yield Completion(cmd.name, -len(word), display_meta=cmd.description)
+                    yield Completion(
+                        cmd.name, -len(word), display_meta=get_first_line(cmd.description)
+                    )
 
         except RuntimeError as e:
             if "No command context available" in str(e):
