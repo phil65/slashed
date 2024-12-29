@@ -20,17 +20,22 @@ if TYPE_CHECKING:
     from slashed.base import OutputWriter
 
 
-T = TypeVar("T", default=Any)
+TContextData = TypeVar("TContextData", default=Any)
 logger = get_logger(__name__)
 
 
-class PromptToolkitCompleter[T](Completer):
-    """Adapts our completion system to prompt-toolkit."""
+class PromptToolkitCompleter[TContextData](Completer):
+    """Adapts our completion system to prompt-toolkit.
+
+    Type Parameters:
+        TContextData: Type of the data in the associated CommandContext. Used when
+                     completions need to access typed context data.
+    """
 
     def __init__(
         self,
         store: CommandStore | None = None,
-        data: T | None = None,
+        data: TContextData | None = None,
         output_writer: OutputWriter | None = None,
         metadata: dict[str, Any] | None = None,
     ):
@@ -44,7 +49,7 @@ class PromptToolkitCompleter[T](Completer):
         """
         self._store = store or CommandStore()
         # Cast to CommandContext[T] since we know the type is preserved
-        self._context: CommandContext[T] = store.create_context(  # type: ignore
+        self._context: CommandContext[TContextData] = store.create_context(  # type: ignore
             data, output_writer, metadata
         )
 
@@ -59,7 +64,9 @@ class PromptToolkitCompleter[T](Completer):
         if not text.startswith("/"):
             return
 
-        completion_context = CompletionContext[T](document, command_context=self._context)
+        completion_context = CompletionContext[TContextData](
+            document, command_context=self._context
+        )
 
         try:
             # If we have a command, use its completer
