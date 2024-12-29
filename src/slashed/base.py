@@ -43,6 +43,11 @@ class CommandContext[TData]:
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def get_data(self) -> TData:
+        """deprecated: Use context instead."""
+        return self.context
+
+    @property
+    def context(self) -> TData:
         """Get context data, asserting it's not None.
 
         Returns:
