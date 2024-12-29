@@ -206,6 +206,50 @@ Use the **declarative style** when:
 - Documentation is important
 - Working in a larger codebase
 
+### Alternative Registration Methods
+
+#### Using the Command Decorator
+
+```python
+@store.command(
+    category="tools",
+    usage="<pattern> [--type type]",
+    completer=PathCompleter(files=True),
+    condition=lambda: find_spec("sqlalchemy") is not None,
+)
+async def search(ctx: CommandContext, pattern: str, *, type: str = "any"):
+    """Search for files in current directory."""
+    await ctx.output.print(f"Searching for {pattern}")
+```
+
+#### Using add_command
+
+```python
+# Direct function
+store.add_command(
+    "search",
+    search_func,
+    category="tools",
+    completer=PathCompleter(files=True),
+)
+
+# Import path
+store.add_command(
+    "query",
+    "myapp.commands.database.execute_query",
+    category="database",
+    condition=lambda: find_spec("sqlalchemy") is not None,
+)
+```
+
+Both methods support:
+- Optional command name (defaults to function name)
+- Automatic description from docstrings
+- All command configuration options
+- Dependency checking via conditions
+- Completion providers
+
+
 
 ## Generic Context Example
 
