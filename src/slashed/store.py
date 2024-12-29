@@ -134,6 +134,8 @@ class CommandStore:
         if isinstance(command, type):
             command = command()
 
+        if not command.is_available():
+            return
         if command.name in self._commands:
             msg = f"Command '{command.name}' already registered"
             raise ValueError(msg)

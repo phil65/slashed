@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+from importlib.util import find_spec
 import os
 import platform
 import subprocess
 import sys
 from typing import TYPE_CHECKING
-
-import psutil
 
 from slashed.commands import SlashedCommand
 from slashed.completers import PathCompleter
@@ -115,6 +114,9 @@ class ProcessesCommand(SlashedCommand):
     name = "ps"
     category = "system"
 
+    def is_available(self) -> bool:
+        return find_spec("psutil") is not None
+
     async def execute_command(
         self,
         ctx: CommandContext,
@@ -122,6 +124,8 @@ class ProcessesCommand(SlashedCommand):
         filter_by: str | None = None,
     ):
         """List running processes."""
+        import psutil
+
         processes = []
         for proc in psutil.process_iter(["pid", "name", "status", "memory_percent"]):
             try:
@@ -164,11 +168,16 @@ class SystemInfoCommand(SlashedCommand):
     name = "sysinfo"
     category = "system"
 
+    def is_available(self) -> bool:
+        return find_spec("psutil") is not None
+
     async def execute_command(
         self,
         ctx: CommandContext,
     ):
         """Show system information."""
+        import psutil
+
         cpu_percent = psutil.cpu_percent(interval=1)
         memory = psutil.virtual_memory()
         disk = psutil.disk_usage("/")
@@ -199,12 +208,17 @@ class KillCommand(SlashedCommand):
     name = "kill"
     category = "system"
 
+    def is_available(self) -> bool:
+        return find_spec("psutil") is not None
+
     async def execute_command(
         self,
         ctx: CommandContext,
         pid: int,
     ):
         """Kill a process by PID."""
+        import psutil
+
         try:
             process = psutil.Process(pid)
             process.terminate()

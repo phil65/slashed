@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from slashed.store import CommandStore
 
 TData = TypeVar("TData")
+type ConditionPredicate = Callable[[], bool]
 
 
 class OutputWriter(Protocol):
@@ -99,6 +100,13 @@ class BaseCommand(ABC):
     _help_text: str | None
     """Optional help text"""
 
+    def is_available(self) -> bool:
+        """Check if command is currently available.
+
+        Override or use condition predicate to implement dynamic availability.
+        """
+        return True
+
     def get_completer(self) -> CompletionProvider | None:
         """Get completion provider for this command.
 
@@ -136,7 +144,20 @@ class Command(BaseCommand):
         usage: str | None = None,
         help_text: str | None = None,
         completer: CompletionProvider | Callable[[], CompletionProvider] | None = None,
+        condition: ConditionPredicate | None = None,
     ):
+        """Initialize command.
+
+        Args:
+            name: Command name
+            description: Command description
+            execute_func: Function to execute command
+            category: Command category
+            usage: Optional usage string
+            help_text: Optional help text
+            completer: Optional completion provider or factory
+            condition: Optional predicate to check command availability
+        """
         self.name = name
         self.description = description
         self.category = category
@@ -144,6 +165,13 @@ class Command(BaseCommand):
         self._help_text = help_text
         self._execute_func = execute_func
         self._completer = completer
+        self._condition = condition
+
+    def is_available(self) -> bool:
+        """Check if command is available based on condition."""
+        if self._condition is not None:
+            return self._condition()
+        return True
 
     async def execute(
         self,
