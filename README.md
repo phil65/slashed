@@ -54,6 +54,13 @@ A Python library for implementing slash commands with rich autocompletion suppor
   - prompt_toolkit support
 - Built-in help system
 
+
+Slashed could be compared to cmd2, both providing interactive command systems with completion and history support,
+but Slashed offers a modern async-first design with rich (generic) type hints, improved autocompletion,
+and flexible UI framework integration for both terminal (prompt-toolkit) and TUI (Textual) applications.
+Unlike cmd2's tight coupling to its own REPL, Slashed is framework-agnostic and provides multiple ways to define commands,
+making it more adaptable to different application needs while maintaining a clean, type-safe API.
+
 ## Installation
 
 ```bash
