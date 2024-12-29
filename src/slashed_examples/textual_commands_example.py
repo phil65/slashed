@@ -8,8 +8,7 @@ from typing import TYPE_CHECKING
 from textual.containers import Container, VerticalScroll
 from textual.widgets import Header, Input, Label
 
-from slashed.commands import SlashedCommand
-from slashed.completers import ChoiceCompleter
+from slashed import ChoiceCompleter, SlashedCommand
 from slashed.textual_adapter import SlashedApp, SlashedSuggester
 
 

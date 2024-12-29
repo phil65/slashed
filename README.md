@@ -297,36 +297,65 @@ if __name__ == "__main__":
 
 ```python
 from dataclasses import dataclass
-from slashed.textual_adapter import SlashedApp
+
+from slashed import ChoiceCompleter, SlashedCommand
+from slashed.textual_adapter import SlashedApp, SlashedSuggester
+from textual.containers import Container, VerticalScroll
+from textual.widgets import Input, Label
 
 
 @dataclass
 class AppState:
-    """Application state passed to commands."""
-    command_count: int = 0
+    """Application state available to commands."""
+    user_name: str
+
+
+class GreetCommand(SlashedCommand):
+    """Greet someone."""
+    name = "greet"
+    category = "demo"
+
+    async def execute_command(
+        self,
+        ctx: CommandContext[AppState],
+        name: str = "World",
+    ) -> None:
+        state = ctx.get_data()
+        await ctx.output.print(f"Hello, {name}! (from {state.user_name})")
+
+    def get_completer(self) -> ChoiceCompleter:
+        return ChoiceCompleter({"World": "Everyone", "Team": "The Team"})
 
 
 class DemoApp(SlashedApp[AppState, None]):
-    """Demo app showing command input with completion."""
+    """App with slash commands and completion."""
 
-    CSS = """
-    Input {
-        margin: 1;
-    }
-    """
+    def __init__(self) -> None:
+        super().__init__(data=AppState(user_name="Admin"))
+        self.store.register_command(GreetCommand)
 
-    async def handle_input(self, value: str) -> None:
-        """Handle regular input by echoing it."""
-        state = self.context.get_data()
-        state.command_count += 1
-        await self.context.output.print(
-            f"Echo: {value} (command #{state.command_count})"
+    def compose(self) -> ComposeResult:
+        # Command input with completion
+        yield Container(
+            Input(
+                id="command-input",
+                suggester=SlashedSuggester(
+                    store=self.store,
+                    context=self.context,
+                ),
+            )
         )
+        # Output areas
+        yield VerticalScroll(id="main-output")
+        yield Label(id="status")
+
+        # Connect outputs to widgets
+        self.bind_output("main", "#main-output", default=True)
+        self.bind_output("status", "#status")
 
 
 if __name__ == "__main__":
-    state = AppState(user_name="Admin")
-    app = DemoApp(data=state)
+    app = DemoApp()
     app.run()
 ```
 
