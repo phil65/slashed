@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+from importlib import import_module
 from typing import TYPE_CHECKING, Any, TypeVar
 
-from slashed.base import CommandContext, OutputWriter, parse_command
+from slashed.base import Command, CommandContext, ExecuteFunc, OutputWriter, parse_command
 from slashed.builtin import get_system_commands
-from slashed.completion import CompletionContext
+from slashed.completion import CompletionContext, CompletionProvider
 from slashed.exceptions import CommandError
 from slashed.log import get_logger
 from slashed.output import DefaultOutputWriter
@@ -18,6 +19,7 @@ except ImportError:
     from pathlib import Path
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     import os
 
     from prompt_toolkit.document import Document
@@ -28,6 +30,7 @@ if TYPE_CHECKING:
 
 TContextData = TypeVar("TContextData")
 logger = get_logger(__name__)
+TCommandFunc = TypeVar("TCommandFunc", bound=ExecuteFunc)
 
 
 class CommandStore:
@@ -262,3 +265,116 @@ class CommandStore:
         if self._enable_system_commands:
             for command in get_system_commands():
                 self.register_command(command)
+
+    def add_command(
+        self,
+        name: str,
+        fn: str | ExecuteFunc,
+        *,
+        description: str | None = None,
+        category: str = "general",
+        usage: str | None = None,
+        help_text: str | None = None,
+        completer: str
+        | CompletionProvider
+        | Callable[[], CompletionProvider]
+        | None = None,
+        condition: Callable[[], bool] | None = None,
+    ) -> None:
+        """Add a command with flexible configuration options.
+
+        Args:
+            name: Command name
+            fn: Import path (str) or callable for command execution
+            description: Command description (defaults to fn's docstring)
+            category: Command category
+            usage: Optional usage string
+            help_text: Optional help text
+            completer: Import path, completion provider, or factory callable
+            condition: Optional function to check if command is available
+        """
+        # Import fn if string
+        if isinstance(fn, str):
+            try:
+                module_path, attr_name = fn.rsplit(".", 1)
+                module = import_module(module_path)
+                fn_obj: ExecuteFunc = getattr(module, attr_name)
+            except Exception as e:
+                msg = f"Failed to import fn function from {fn}: {e}"
+                raise ValueError(msg) from e
+        else:
+            fn_obj = fn
+        # Import completer if string
+        if isinstance(completer, str):
+            try:
+                module_path, attr_name = completer.rsplit(".", 1)
+                module = import_module(module_path)
+                completer_obj = getattr(module, attr_name)
+            except Exception as e:
+                msg = f"Failed to import completer from {completer}: {e}"
+                raise ValueError(msg) from e
+        else:
+            completer_obj = completer
+        # Use docstring as description if not provided
+        if description is None and callable(fn_obj):
+            description = fn_obj.__doc__ or "No description"
+
+        # Create and register command
+        command = Command(
+            name=name,
+            description=description or "No description",
+            execute_func=fn_obj,
+            category=category,
+            usage=usage,
+            help_text=help_text,
+            completer=completer_obj,
+            condition=condition,
+        )
+        self.register_command(command)
+
+    def command(
+        self,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+        category: str = "general",
+        usage: str | None = None,
+        help_text: str | None = None,
+        completer: CompletionProvider | Callable[[], CompletionProvider] | None = None,
+        condition: Callable[[], bool] | None = None,
+    ) -> Callable[[TCommandFunc], TCommandFunc]:
+        """Decorator to register a function as a command.
+
+        Args:
+            name: Command name (defaults to function name)
+            description: Command description (defaults to function docstring)
+            category: Command category
+            usage: Optional usage string
+            help_text: Optional help text
+            completer: Optional completion provider or factory
+            condition: Optional function to check if command is available
+
+        Example:
+            ```python
+            @store.command(category="tools")
+            async def hello(ctx: CommandContext, name: str = "World"):
+                '''Say hello to someone.'''
+                await ctx.output.print(f"Hello {name}!")
+            ```
+        """
+
+        def decorator(func: TCommandFunc) -> TCommandFunc:
+            cmd_name = name or func.__name__.replace("_", "-")
+            self.add_command(
+                name=cmd_name,
+                fn=func,
+                description=description,
+                category=category,
+                usage=usage,
+                help_text=help_text,
+                completer=completer,
+                condition=condition,
+            )
+            return func
+
+        return decorator
