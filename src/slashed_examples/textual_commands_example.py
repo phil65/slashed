@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from textual.containers import Container, VerticalScroll
 from textual.widgets import Header, Input, Label
 
-from slashed import Command, CommandContext
+from slashed.commands import SlashedCommand
 from slashed.completers import ChoiceCompleter
 from slashed.textual_adapter import SlashedApp, SlashedSuggester
 
@@ -16,26 +16,51 @@ from slashed.textual_adapter import SlashedApp, SlashedSuggester
 if TYPE_CHECKING:
     from textual.app import ComposeResult
 
+    from slashed import CommandContext
+
+INPUT_ID = "command-input"
+
 
 @dataclass
 class AppState:
-    """Application state passed to commands."""
+    """Application state passed to commands.
+
+    This state object will be available to all commands via ctx.get_data().
+    Commands can access and modify this state to maintain persistence
+    between command executions.
+    """
 
     user_name: str
     command_count: int = 0
 
 
-async def greet(
-    ctx: CommandContext[AppState], args: list[str], kwargs: dict[str, str]
-) -> None:
-    """Greet someone."""
-    name = args[0] if args else "World"
-    state = ctx.get_data()
-    await ctx.output.print(f"Hello, {name}! (from {state.user_name})")
+class GreetCommand(SlashedCommand):
+    """Greet someone with a custom greeting."""
+
+    name = "greet"
+    category = "demo"
+
+    async def execute_command(
+        self,
+        ctx: CommandContext[AppState],  # Type hint ensures proper state typing
+        name: str = "World",
+    ) -> None:
+        """Greet someone."""
+        state = ctx.get_data()  # Type-safe access to AppState
+        await ctx.output.print(f"Hello, {name}! (from {state.user_name})")
+
+    def get_completer(self) -> ChoiceCompleter:
+        """Provide name suggestions."""
+        return ChoiceCompleter({"World": "Everyone", "Team": "The whole team"})
 
 
 class DemoApp(SlashedApp[AppState, None]):
-    """Demo app showing command input with completion."""
+    """Demo app showing command input with completion.
+
+    Generic parameters:
+        AppState: Type of data available to commands
+        None: App return type (from Textual)
+    """
 
     CSS = """
     Container {
@@ -51,51 +76,49 @@ class DemoApp(SlashedApp[AppState, None]):
 
     def __init__(self, data: AppState | None = None) -> None:
         """Initialize app with custom command."""
+        # Initialize SlashedApp with our state
         super().__init__(data=data)
-        self.store.register_command(
-            Command(
-                name="greet",
-                description="Greet someone",
-                execute_func=greet,
-                completer=ChoiceCompleter({
-                    "World": "Everyone",
-                    "Team": "The whole team",
-                    "Phil": "The creator",
-                }),
-            )
-        )
+        # Register our command - will be available as /greet
+        self.store.register_command(GreetCommand)
 
     def on_mount(self) -> None:
-        # Set up output bindings
+        """Set up output routing after widgets are mounted."""
+        # Connect command output to specific widgets:
+        # - Main command output goes to the scroll area
+        # - Status messages go to the label
         self.bind_output("main", "#main-output", default=True)
         self.bind_output("status", "#status")
 
     def compose(self) -> ComposeResult:
         """Create app layout."""
         yield Header()
-        yield Container(
-            Input(
-                placeholder="Type /help or /greet <name>",
-                id="command-input",
-                suggester=SlashedSuggester(
-                    store=self.store,
-                    context=self.context,
-                ),
-            )
-        )
-        yield VerticalScroll(id="main-output")
-        yield Label(id="status")
 
-    @SlashedApp.command_input("command-input")
+        # Create input with command completion
+        suggester = SlashedSuggester(
+            store=self.store,  # Provides command completion
+            context=self.context,  # Needed for command arg completion
+        )
+        msg = "Type /help or /greet <name>"
+        input_widget = Input(placeholder=msg, id=INPUT_ID, suggester=suggester)
+        yield Container(input_widget)
+
+        # Output widgets - must match the IDs used in bind_output
+        yield VerticalScroll(id="main-output")  # For command output
+        yield Label(id="status")  # For status messages
+
+    @SlashedApp.command_input(INPUT_ID)
     async def handle_text(self, value: str) -> None:
-        """Handle regular text input."""
+        """Handle non-command text input (optional).
+
+        Remove this method if you only want to handle slash commands.
+        """
         state = self.context.get_data()
         state.command_count += 1
-        await self.context.output.print(
-            f"[{state.user_name}] Echo: {value} (command #{state.command_count})"
-        )
+        msg = f"[{state.user_name}] Echo: {value} (command #{state.command_count})"
+        await self.context.output.print(msg)
 
 
 if __name__ == "__main__":
-    app = DemoApp(data=AppState(user_name="Admin"))
+    state = AppState(user_name="Admin")
+    app = DemoApp(data=state)
     app.run()

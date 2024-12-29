@@ -88,17 +88,8 @@ class PromptToolkitCompleter[T](Completer):
                     text,
                 )
             else:
-                logger.debug(
-                    "Unexpected RuntimeError during completion for text '%s': %s",
-                    text,
-                    str(e),
-                    exc_info=True,
-                )
+                msg = "Unexpected RuntimeError during completion for text '%s': %s"
+                logger.debug(msg, text, str(e), exc_info=True)
         except Exception as e:  # noqa: BLE001
-            logger.debug(
-                "Completion failed for text '%s': %s (%s)",
-                text,
-                str(e),
-                type(e).__name__,
-                exc_info=True,
-            )
+            msg = "Completion failed for text '%s': %s (%s)"
+            logger.debug(msg, text, str(e), type(e).__name__, exc_info=True)
