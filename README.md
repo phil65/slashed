@@ -242,13 +242,41 @@ store.add_command(
 )
 ```
 
-Both methods support:
-- Optional command name (defaults to function name)
-- Automatic description from docstrings
-- All command configuration options
-- Dependency checking via conditions
-- Completion providers
+#### Using CommandRegistry
 
+For cases where you need to define commands before initializing the store (e.g., in module-level code),
+you can use `CommandRegistry` to collect commands and register them later:
+
+```python
+# commands.py
+from slashed import CommandRegistry
+from slashed.completers import PathCompleter
+
+registry = CommandRegistry()
+
+@registry.command(
+    category="tools",
+    completer=PathCompleter(files=True)
+)
+async def search(ctx: CommandContext, pattern: str):
+    """Search for files in current directory."""
+    await ctx.output.print(f"Searching for {pattern}")
+
+@registry.command(
+    category="tools",
+    condition=lambda: find_spec("sqlalchemy") is not None
+)
+async def query(ctx: CommandContext, sql: str):
+    """Execute database query."""
+    await ctx.output.print(f"Running query: {sql}")
+
+# app.py
+from slashed import CommandStore
+from .commands import registry
+
+store = CommandStore()
+registry.register_to(store)  # Register all collected commands
+```
 
 
 ## Generic Context Example

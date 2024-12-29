@@ -25,6 +25,7 @@ from slashed.completers import (
 from slashed.exceptions import CommandError, ExitCommandError
 from slashed.output import DefaultOutputWriter
 from slashed.store import CommandStore
+from slashed.registry import CommandRegistry
 
 
 __version__ = "0.7.0"
@@ -41,6 +42,7 @@ __all__ = [  # noqa: RUF022
     "ParsedCommandArgs",
     "SlashedCommand",
     "parse_command",
+    "CommandRegistry",
     # Completion
     "CompletionContext",
     "CompletionItem",

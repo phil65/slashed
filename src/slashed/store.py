@@ -365,10 +365,11 @@ class CommandStore:
 
         def decorator(func: TCommandFunc) -> TCommandFunc:
             cmd_name = name or func.__name__.replace("_", "-")
+            cmd_description = description or func.__doc__ or "No description"
             self.add_command(
                 name=cmd_name,
                 fn=func,
-                description=description,
+                description=cmd_description,
                 category=category,
                 usage=usage,
                 help_text=help_text,

@@ -137,9 +137,9 @@ class Command(BaseCommand):
 
     def __init__(
         self,
-        name: str,
-        description: str,
         execute_func: ExecuteFunc,
+        name: str | None = None,
+        description: str | None = None,
         category: str = "general",
         usage: str | None = None,
         help_text: str | None = None,
@@ -149,20 +149,20 @@ class Command(BaseCommand):
         """Initialize command.
 
         Args:
-            name: Command name
-            description: Command description
             execute_func: Function to execute command
+            name: Optional command name (defaults to function name)
+            description: Command description (defaults to function docstring)
             category: Command category
             usage: Optional usage string
-            help_text: Optional help text
+            help_text: Optional help text (defaults to description)
             completer: Optional completion provider or factory
             condition: Optional predicate to check command availability
         """
-        self.name = name
-        self.description = description
+        self.name = name or execute_func.__name__.replace("_", "-")
+        self.description = description or execute_func.__doc__ or "No description"
         self.category = category
         self.usage = usage
-        self._help_text = help_text
+        self._help_text = help_text or self.description
         self._execute_func = execute_func
         self._completer = completer
         self._condition = condition
