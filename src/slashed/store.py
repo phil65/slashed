@@ -41,11 +41,16 @@ class CommandStore:
         self._commands: dict[str, BaseCommand] = {}
         self._command_history: list[str] = []
         self._history_path = Path(history_file) if history_file else None
+        self._initialized = False
         if self._history_path:
             self._history_path.parent.mkdir(parents=True, exist_ok=True)
 
-    async def initialize(self):
-        """Initialize command store and load history."""
+    def _initialize_sync(self) -> None:
+        """Initialize the store synchronously."""
+        if self._initialized:
+            return
+
+        # Load history
         try:
             if self._history_path and self._history_path.exists():
                 self._command_history = self._history_path.read_text().splitlines()
@@ -53,8 +58,13 @@ class CommandStore:
             logger.exception("Failed to load command history")
             self._command_history = []
 
-        # Register default commands
+        # Register commands
         self.register_builtin_commands()
+        self._initialized = True
+
+    async def initialize(self) -> None:
+        """Initialize the store (async wrapper for backward compatibility)."""
+        self._initialize_sync()
 
     def add_to_history(self, command: str):
         """Add command to history."""

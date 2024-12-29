@@ -25,15 +25,51 @@ logger = get_logger(__name__)
 
 
 class TextualOutputWriter(OutputWriter):
-    """Output writer that uses Textual widgets for output."""
+    """Output writer that routes messages to bound widgets."""
 
     def __init__(self, app: App) -> None:
         self.app = app
+        self._bindings: dict[str, str] = {}
+        self._default_binding: str | None = None
 
-    async def print(self, message: str) -> None:
-        """Write message by mounting a new Label."""
-        output_area = self.app.query_one("#output-area", VerticalScroll)
-        output_area.mount(Label(message))
+    def bind(self, output_id: str, widget_query: str, default: bool = False) -> None:
+        """Bind an output to a widget.
+
+        Args:
+            output_id: ID for this output stream
+            widget_query: CSS query to find the target widget
+            default: Whether this is the default output for unspecified streams
+        """
+        self._bindings[output_id] = widget_query
+        if default:
+            self._default_binding = output_id
+
+    async def print(self, message: str, output_id: str | None = None) -> None:
+        """Print message to bound widget.
+
+        Args:
+            message: Message to display
+            output_id: Optional output stream ID. Uses default if not specified.
+        """
+        if output_id is None and self._default_binding is None:
+            msg = "No default output binding configured"
+            raise ValueError(msg)
+
+        binding = self._bindings.get(
+            output_id or self._default_binding,  # type: ignore
+        )
+        if not binding:
+            msg = f"No binding found for output: {output_id}"
+            raise ValueError(msg)
+
+        widget = self.app.query_one(binding)
+        if isinstance(widget, VerticalScroll):
+            widget.mount(Label(message))
+        elif isinstance(widget, Label):
+            widget.update(message)
+        else:
+            # Could add more widget types here
+            widget.update(message)  # type: ignore
 
 
 class SlashedSuggester(Suggester):
@@ -141,13 +177,26 @@ class SlashedApp[TContext, TResult](App[TResult]):  # type: ignore[type-var]
         """Initialize app with command store."""
         super().__init__(*args, **kwargs)
         self.store = store or CommandStore()
+        self.store._initialize_sync()
         self.context = self.store.create_context(
             data=data, output_writer=TextualOutputWriter(self)
         )
 
-    async def on_mount(self) -> None:
-        """Initialize command store when app is mounted."""
-        await self.store.initialize()
+    def bind_output(
+        self, output_id: str, widget_query: str, default: bool = False
+    ) -> None:
+        """Bind an output stream to a widget.
+
+        Args:
+            output_id: ID for this output stream
+            widget_query: CSS query to find the target widget
+            default: Whether this is the default output
+        """
+        writer = self.context.output
+        if not isinstance(writer, TextualOutputWriter):
+            msg = "Output writer is not a TextualOutputWriter"
+            raise TypeError(msg)
+        writer.bind(output_id, widget_query, default=default)
 
     @classmethod
     def command_input(

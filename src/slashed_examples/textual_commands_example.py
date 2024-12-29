@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from textual.containers import Container, VerticalScroll
-from textual.widgets import Header, Input
+from textual.widgets import Header, Input, Label
 
 from slashed import Command, CommandContext
 from slashed.completers import ChoiceCompleter
@@ -65,6 +65,11 @@ class DemoApp(SlashedApp[AppState, None]):
             )
         )
 
+    def on_mount(self) -> None:
+        # Set up output bindings
+        self.bind_output("main", "#main-output", default=True)
+        self.bind_output("status", "#status")
+
     def compose(self) -> ComposeResult:
         """Create app layout."""
         yield Header()
@@ -78,7 +83,8 @@ class DemoApp(SlashedApp[AppState, None]):
                 ),
             )
         )
-        yield VerticalScroll(id="output-area")
+        yield VerticalScroll(id="main-output")
+        yield Label(id="status")
 
     @SlashedApp.command_input("command-input")
     async def handle_text(self, value: str) -> None:
