@@ -160,9 +160,17 @@ class SystemInfoCommand(SlashedCommand):
     """Show system information.
 
     Usage:
-      /sysinfo
+        /sysinfo
 
-    Displays detailed information about the system.
+    Displays:
+        - OS information
+        - CPU usage
+        - Memory usage
+        - Disk usage
+        - Network interfaces
+
+    Requires:
+        psutil package
     """
 
     name = "sysinfo"
@@ -200,9 +208,14 @@ class KillCommand(SlashedCommand):
     """Kill a running process.
 
     Usage:
-      /kill <pid>
+      /kill <pid_or_name>
 
-    Terminates the process with the given PID.
+    Kill process by PID or name. Numbers are treated as PIDs,
+    anything else as process name.
+
+    Examples:
+      /kill 1234        # Kill by PID
+      /kill notepad.exe # Kill all processes with this name
     """
 
     name = "kill"
@@ -214,21 +227,41 @@ class KillCommand(SlashedCommand):
     async def execute_command(
         self,
         ctx: CommandContext,
-        pid: int,
+        target: str,
     ):
-        """Kill a process by PID."""
+        """Kill a process by PID or name."""
         import psutil
 
+        # Try to parse as PID first
         try:
-            process = psutil.Process(pid)
-            process.terminate()
-            await ctx.output.print(f"Process {pid} terminated")
+            if target.isdigit():
+                pid = int(target)
+                process = psutil.Process(pid)
+                process.terminate()
+                await ctx.output.print(f"Process {pid} terminated")
+                return
         except psutil.NoSuchProcess as e:
-            msg = f"No process with PID {pid}"
+            msg = f"No process with PID {target}"
             raise CommandError(msg) from e
         except psutil.AccessDenied as e:
-            msg = f"Permission denied to kill process {pid}"
+            msg = f"Permission denied to kill process {target}"
             raise CommandError(msg) from e
+
+        # If not a number, treat as process name
+        killed = 0
+        for proc in psutil.process_iter(["pid", "name"]):
+            try:
+                if proc.info["name"].lower() == target.lower():
+                    proc.terminate()
+                    killed += 1
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
+
+        if killed:
+            await ctx.output.print(f"Terminated {killed} process(es) named '{target}'")
+        else:
+            msg = f"No processes found with name '{target}'"
+            raise CommandError(msg)
 
 
 class EnvCommand(SlashedCommand):
