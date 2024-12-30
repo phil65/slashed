@@ -70,6 +70,8 @@ class CommandInput[TContext](Input):
         placeholder: str = "Type a command...",
         *,
         context_data: Any | None = None,
+        output_id: str = "main-output",
+        status_id: str | None = None,
         show_notifications: bool = False,
         enable_system_commands: bool = True,
         id: str | None = None,  # noqa: A002
@@ -79,6 +81,8 @@ class CommandInput[TContext](Input):
         Args:
             placeholder: Input placeholder text
             context_data: Data to be available to commands via ctx.get_data()
+            output_id: ID of the output area to route output to
+            status_id: ID of the status area to route status messages to
             show_notifications: Whether to show debug notifications
             enable_system_commands: Whether to enable system commands (/exec, etc)
             id: Widget ID
@@ -86,7 +90,6 @@ class CommandInput[TContext](Input):
         super().__init__(placeholder=placeholder, id=id)
         # Create store and writer internally
         self.store = CommandStore(enable_system_commands=enable_system_commands)
-        self.store._initialize_sync()
         self.output_writer = TextualOutputWriter(self.app)
         self.context: CommandContext[TContext] = self.store.create_context(
             data=context_data, output_writer=self.output_writer
@@ -94,6 +97,8 @@ class CommandInput[TContext](Input):
         self._showing_dropdown = False
         self._command_tasks: set[asyncio.Task[None]] = set()
         self.logger = logging.getLogger(f"slashed.textual.command_input.{self.id}")
+        self._output_id = output_id
+        self._status_id = status_id
         if show_notifications:
             handler = UINotificationHandler(self)
             handler.setLevel(logging.DEBUG)
@@ -130,14 +135,16 @@ class CommandInput[TContext](Input):
                     event.prevent_default()
                     event.stop()
 
-    def on_mount(self) -> None:
+    async def on_mount(self) -> None:
         """Mount the dropdown to the screen when input is mounted."""
+        await self.store.initialize()
         self._dropdown = CommandDropdown(id=f"{self.id}-dropdown")
         self._dropdown.can_focus = False
         self._dropdown.display = False
         self.screen.mount(self._dropdown)
-        self.output_writer.bind("main", "#main-output", default=True)
-        self.output_writer.bind("status", "#status")
+        self.output_writer.bind("main", f"#{self._output_id}", default=True)
+        if self._status_id:
+            self.output_writer.bind("status", f"#{self._status_id}")
 
     def on_unmount(self) -> None:
         """Cancel all running tasks when unmounting."""

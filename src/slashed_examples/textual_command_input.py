@@ -67,9 +67,10 @@ class DemoApp(App[None]):
         yield Header()
 
         command_input = CommandInput[AppState](
-            placeholder="Type /help or /color <scheme>",
+            placeholder="Type /help to see commands",
             context_data=AppState(),
-            enable_system_commands=True,
+            output_id="command-output",  # ID for the commnd output
+            status_id="status-area",  # ID for error messages and status
         )
         command_input.store.register_command(ColorCommand())
         yield Container(command_input)
