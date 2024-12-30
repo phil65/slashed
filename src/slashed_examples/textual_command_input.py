@@ -5,7 +5,7 @@ from textual.containers import Container, VerticalScroll
 from textual.widgets import Header, Label
 
 from slashed import ChoiceCompleter, CommandContext, CompletionProvider, SlashedCommand
-from slashed.textual_adapter import CommandInput
+from slashed.textual_adapter import CommandTextArea
 
 
 @dataclass
@@ -63,8 +63,7 @@ class DemoApp(App[None]):
         """Create app layout."""
         yield Header()
 
-        command_input = CommandInput[AppState](
-            placeholder="Type /help to see commands",
+        command_input = CommandTextArea[AppState](
             context_data=AppState(),
             output_id="main-output",  # ID for the commnd output
             status_id="status-area",  # ID for error messages and status
@@ -72,7 +71,7 @@ class DemoApp(App[None]):
         command_input.store.register_command(ColorCommand())
         yield Container(command_input)
 
-        # Output areas - IDs must match what CommandInput expects
+        # Output areas - IDs must match what CommandTextArea expects
         yield VerticalScroll(id="main-output")
         yield Label(id="status")
 

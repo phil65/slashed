@@ -43,8 +43,7 @@ class CommandTextArea[TContext](TextArea, CommandWidgetMixin[TContext]):
 
     def __init__(
         self,
-        placeholder: str = "Type a command...",
-        *,  # Force keyword arguments
+        *,
         context_data: TContext | None = None,
         output_id: str = "main-output",
         status_id: str | None = None,
@@ -80,25 +79,6 @@ class CommandTextArea[TContext](TextArea, CommandWidgetMixin[TContext]):
             show_notifications=show_notifications,
             enable_system_commands=enable_system_commands,
         )
-
-        # Handle placeholder
-        self._placeholder = placeholder
-        self._showing_placeholder = False
-        if placeholder:
-            self._show_placeholder()
-
-    def _show_placeholder(self) -> None:
-        """Show placeholder text if no content."""
-        if not self.text and not self._showing_placeholder:
-            self._showing_placeholder = True
-            # Add placeholder with gray color
-            self.insert("[gray]" + self._placeholder)
-
-    def _hide_placeholder(self) -> None:
-        """Hide placeholder text."""
-        if self._showing_placeholder:
-            self.clear()
-            self._showing_placeholder = False
 
     # Protocol implementation
     def get_first_line(self) -> str:
@@ -291,15 +271,6 @@ class CommandTextArea[TContext](TextArea, CommandWidgetMixin[TContext]):
 
     def on_text_area_changed(self, message: TextArea.Changed) -> None:
         """Handle text changes."""
-        # Handle placeholder
-        if self._showing_placeholder and self.text != f"[gray]{self._placeholder}":
-            self._showing_placeholder = False
-
-        if not self.text:
-            self._show_placeholder()
-            return
-
-        # Normal completion handling
         if self.is_command_mode:
             self._update_completions()
         else:
