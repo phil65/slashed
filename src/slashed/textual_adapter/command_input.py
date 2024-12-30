@@ -12,6 +12,7 @@ from textual.message import Message
 from textual.widgets import Input
 
 from slashed.completion import CompletionContext, CompletionItem
+from slashed.exceptions import CommandError, ExitCommandError
 from slashed.textual_adapter.dropdown import CommandDropdown, CompletionOption
 
 
@@ -268,9 +269,15 @@ class CommandInput(Input):
         try:
             await self.store.execute_command(command, self.context)
             self.post_message(self.CommandExecuted(command))
-        except Exception as e:  # noqa: BLE001
-            # Use output writer for errors too
+        except ExitCommandError as e:
+            # Exit command requested - post app exit message
+            self.app.exit(str(e))
+        except CommandError as e:
+            # Regular command error - just show message
             await self.context.output.print(f"Error: {e}")
+        except Exception as e:  # noqa: BLE001
+            # Unexpected error
+            await self.context.output.print(f"Unexpected error: {e}")
 
     @on(Input.Submitted)
     async def _handle_submit(self, event: Input.Submitted) -> None:
