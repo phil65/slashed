@@ -12,8 +12,10 @@ from textual.binding import Binding
 from textual.message import Message
 from textual.widgets import Input
 
+from slashed import CommandStore
 from slashed.completion import CompletionContext, CompletionItem
 from slashed.exceptions import CommandError, ExitCommandError
+from slashed.textual_adapter.app import TextualOutputWriter
 from slashed.textual_adapter.dropdown import CommandDropdown, CompletionOption
 from slashed.textual_adapter.log import UINotificationHandler
 
@@ -22,9 +24,8 @@ if TYPE_CHECKING:
     from textual.events import Key
     from textual.reactive import Reactive
 
-    from slashed import CommandStore
-    from slashed.base import CommandContext
-    from slashed.textual_adapter.app import TextualOutputWriter
+    from slashed.base import BaseCommand, CommandContext
+    from slashed.commands import SlashedCommand
 
 
 class CommandInput(Input):
@@ -47,18 +48,29 @@ class CommandInput(Input):
 
     def __init__(
         self,
-        store: CommandStore,
-        data: Any | None = None,
-        output_writer: TextualOutputWriter | None = None,
         placeholder: str = "Type a command...",
-        show_notifications: bool = False,
         *,
+        context_data: Any | None = None,
+        show_notifications: bool = False,
+        enable_system_commands: bool = True,
         id: str | None = None,  # noqa: A002
     ):
+        """Initialize command input with autocompletion.
+
+        Args:
+            placeholder: Input placeholder text
+            context_data: Data to be available to commands via ctx.get_data()
+            show_notifications: Whether to show debug notifications
+            enable_system_commands: Whether to enable system commands (/exec, etc)
+            id: Widget ID
+        """
         super().__init__(placeholder=placeholder, id=id)
-        self.store = store
-        self.context: CommandContext[Any] = store.create_context(
-            data=data, output_writer=output_writer
+        # Create store and writer internally
+        self.store = CommandStore(enable_system_commands=enable_system_commands)
+        self.store._initialize_sync()
+        self.output_writer = TextualOutputWriter(self.app)
+        self.context: CommandContext[Any] = self.store.create_context(
+            data=context_data, output_writer=self.output_writer
         )
         self._showing_dropdown = False
         self._command_tasks: set[asyncio.Task[None]] = set()
@@ -105,6 +117,12 @@ class CommandInput(Input):
         self._dropdown.can_focus = False
         self._dropdown.display = False
         self.screen.mount(self._dropdown)
+        self.output_writer.bind("main", "#main-output", default=True)
+        self.output_writer.bind("status", "#status")
+
+    def register_command(self, command: type[SlashedCommand] | BaseCommand) -> None:
+        """Register a custom command."""
+        self.store.register_command(command)
 
     def on_unmount(self) -> None:
         """Cancel all running tasks when unmounting."""
