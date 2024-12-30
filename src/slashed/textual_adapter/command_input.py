@@ -145,37 +145,22 @@ class CommandInput(Input):
 
         # Argument completion
         command_name = parts[0]
-        if command := self.store.get_command(command_name):
-            if command_name == "help":
-                # Special case for help command
-                arg = parts[-1] if len(parts) > 1 else ""
-                matches = [
-                    cmd for cmd in self.store.list_commands() if cmd.name.startswith(arg)
-                ]
-                return [
-                    CompletionItem(
-                        text=cmd.name,
-                        metadata=cmd.description,
-                        kind="command-arg",  # type: ignore
-                    )
-                    for cmd in matches
-                ]
+        if (command := self.store.get_command(command_name)) and (
+            completer := command.get_completer()
+        ):
+            self.logger.debug("Found completer for command: %s", command_name)
 
-            # For other commands, use their completer
-            if completer := command.get_completer():
-                self.logger.debug("Found completer for command: %s", command_name)
+            # Create a new document for just the argument part
+            arg_text = parts[-1] if len(parts) > 1 else ""
+            arg_document = Document(text=arg_text, cursor_position=len(arg_text))
+            arg_context = CompletionContext(
+                document=arg_document, command_context=self.context
+            )
 
-                # Create a new document for just the argument part
-                arg_text = parts[-1] if len(parts) > 1 else ""
-                arg_document = Document(text=arg_text, cursor_position=len(arg_text))
-                arg_context = CompletionContext(
-                    document=arg_document, command_context=self.context
-                )
-
-                completions = list(completer.get_completions(arg_context))
-                num = len(completions)
-                self.logger.debug("Got %s completions from command completer", num)
-                return completions
+            completions = list(completer.get_completions(arg_context))
+            num = len(completions)
+            self.logger.debug("Got %s completions from command completer", num)
+            return completions
 
         return []
 
