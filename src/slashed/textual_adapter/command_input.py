@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, TypeVar
 
 from prompt_toolkit.document import Document
 from textual import on
@@ -28,7 +28,10 @@ if TYPE_CHECKING:
     from slashed.commands import SlashedCommand
 
 
-class CommandInput(Input):
+TContext = TypeVar("TContext")
+
+
+class CommandInput[TContext](Input):
     """Input widget for entering slash commands with completion support."""
 
     DEFAULT_CSS = """
@@ -69,7 +72,7 @@ class CommandInput(Input):
         self.store = CommandStore(enable_system_commands=enable_system_commands)
         self.store._initialize_sync()
         self.output_writer = TextualOutputWriter(self.app)
-        self.context: CommandContext[Any] = self.store.create_context(
+        self.context: CommandContext[TContext] = self.store.create_context(
             data=context_data, output_writer=self.output_writer
         )
         self._showing_dropdown = False
