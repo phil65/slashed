@@ -48,7 +48,7 @@ class CommandTextArea[TContext](TextArea, CommandWidgetMixin[TContext]):
         output_id: str = "main-output",
         status_id: str | None = None,
         show_notifications: bool = False,
-        enable_system_commands: bool = True,
+        enable_system_commands: bool = False,
         # TextArea specific parameters
         language: str | None = None,
         theme: str = "css",

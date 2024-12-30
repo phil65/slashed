@@ -41,7 +41,7 @@ class ColorCommand(SlashedCommand):
         await ctx.output.print(f"Changing color scheme to: {scheme}")
 
 
-class DemoApp(App[None]):
+class DemoApp(App):
     """Demo app showing new command input with completion."""
 
     CSS = """
