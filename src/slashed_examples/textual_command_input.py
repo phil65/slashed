@@ -4,11 +4,8 @@ from textual.app import App, ComposeResult
 from textual.containers import Container, VerticalScroll
 from textual.widgets import Header, Label
 
-from slashed.base import CommandContext
-from slashed.commands import SlashedCommand
-from slashed.completers import ChoiceCompleter
-from slashed.completion import CompletionProvider
-from slashed.textual_adapter.command_input import CommandInput
+from slashed import ChoiceCompleter, CommandContext, CompletionProvider, SlashedCommand
+from slashed.textual_adapter import CommandInput
 
 
 @dataclass
