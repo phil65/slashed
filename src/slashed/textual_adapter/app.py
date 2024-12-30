@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from textual.app import App
-from textual.containers import VerticalScroll
+from textual.containers import Container, VerticalScroll
 from textual.widgets import Input, Label
 
 from slashed.base import BaseCommand, OutputWriter
@@ -23,7 +23,13 @@ logger = get_logger(__name__)
 
 
 class TextualOutputWriter(OutputWriter):
-    """Output writer that routes messages to bound widgets."""
+    """Output writer that routes messages to bound widgets.
+
+    Supports different widget types:
+    - Labels: Direct update of content
+    - VerticalScroll/Container: Mount new Label with content
+    - Other widgets: Try update() method
+    """
 
     def __init__(self, app: App) -> None:
         self.app = app
@@ -48,6 +54,15 @@ class TextualOutputWriter(OutputWriter):
         Args:
             message: Message to display
             output_id: Optional output stream ID. Uses default if not specified.
+
+        The message is handled differently based on widget type:
+        - For containers (VerticalScroll/Container): Mount new Label
+        - For Label widgets: Update content
+        - For other widgets: Try update() method
+
+        Raises:
+            ValueError: If no default binding is configured or binding not found
+            TypeError: If widget type is not supported
         """
         if output_id is None and self._default_binding is None:
             msg = "No default output binding configured"
@@ -61,13 +76,16 @@ class TextualOutputWriter(OutputWriter):
             raise ValueError(msg)
 
         widget = self.app.query_one(binding)
-        if isinstance(widget, VerticalScroll):
+        if isinstance(widget, VerticalScroll | Container):
             widget.mount(Label(message))
         elif isinstance(widget, Label):
             widget.update(message)
         else:
-            # Could add more widget types here
-            widget.update(message)  # type: ignore
+            try:
+                widget.update(message)  # type: ignore
+            except AttributeError as e:
+                msg = f"Widget {type(widget).__name__} does not support update()"
+                raise TypeError(msg) from e
 
 
 class SlashedApp[TContext, TResult](App[TResult]):  # type: ignore[type-var]
