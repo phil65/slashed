@@ -125,9 +125,8 @@ class CommandInput(Input):
 
         if self._debug:
             self.notify(f"Getting completions for parts: {parts}")
-            self.notify(f"Current word: {completion_context.current_word}")
 
-        # Command name completion - only if we haven't typed a command yet
+        # Command name completion
         if not parts or (len(parts) == 1 and not self.value.endswith(" ")):
             text = completion_context.current_word.lstrip("/")
             if self._debug:
@@ -142,9 +141,6 @@ class CommandInput(Input):
 
         # Argument completion
         command_name = parts[0]
-        if self._debug:
-            self.notify(f"Looking for argument completions for command: {command_name}")
-
         if command := self.store.get_command(command_name):
             if command_name == "help":
                 # Special case for help command
