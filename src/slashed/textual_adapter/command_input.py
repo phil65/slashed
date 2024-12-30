@@ -58,12 +58,11 @@ class CommandInput(Input):
             data=data, output_writer=output_writer
         )
         self._showing_dropdown = False
-        self._debug = True  # Add debug flag
+        self._debug = True
         self._command_tasks: set[asyncio.Task[None]] = set()
 
     def on_key(self, event: Key) -> None:
         """Handle special keys."""
-        # Handle completion navigation keys
         if self._showing_dropdown:
             match event.key:
                 case "up":
