@@ -24,15 +24,31 @@ if TYPE_CHECKING:
     from textual.events import Key
     from textual.reactive import Reactive
 
-    from slashed.base import BaseCommand, CommandContext
-    from slashed.commands import SlashedCommand
+    from slashed.base import CommandContext
 
 
 TContext = TypeVar("TContext")
 
 
 class CommandInput[TContext](Input):
-    """Input widget for entering slash commands with completion support."""
+    """Input widget for entering slash commands with completion support.
+
+    Type Parameters:
+        TContext: Type of the context data available to commands via ctx.get_data()
+
+    Example:
+        ```python
+        @dataclass
+        class AppState:
+            theme: str = "light"
+
+        command_input = CommandInput[AppState](
+            context_data=AppState(),
+            enable_system_commands=True,
+        )
+        command_input.store.register_command(MyCommand())
+        ```
+    """
 
     DEFAULT_CSS = """
     CommandInput {
@@ -122,10 +138,6 @@ class CommandInput[TContext](Input):
         self.screen.mount(self._dropdown)
         self.output_writer.bind("main", "#main-output", default=True)
         self.output_writer.bind("status", "#status")
-
-    def register_command(self, command: type[SlashedCommand] | BaseCommand) -> None:
-        """Register a custom command."""
-        self.store.register_command(command)
 
     def on_unmount(self) -> None:
         """Cancel all running tasks when unmounting."""

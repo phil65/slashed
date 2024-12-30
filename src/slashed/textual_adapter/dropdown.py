@@ -8,6 +8,8 @@ from rich.text import Text
 from textual.widgets import OptionList
 from textual.widgets.option_list import Option
 
+from slashed import utils
+
 
 if TYPE_CHECKING:
     from slashed.completion import CompletionItem
@@ -19,7 +21,9 @@ class CompletionOption(Option):
     def __init__(self, completion: CompletionItem):
         display = Text.from_markup(f"[blue]{completion.text}[/]")
         if completion.metadata:
-            display.append_text(Text.from_markup(f" - [green]{completion.metadata}[/]"))
+            # Only use first line of metadata
+            first_line = utils.get_first_line(completion.metadata) or ""
+            display.append_text(Text.from_markup(f" - [green]{first_line}[/]"))
         super().__init__(display)
         self.completion = completion
 

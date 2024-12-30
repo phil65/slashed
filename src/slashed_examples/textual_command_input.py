@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from textual.app import App, ComposeResult
 from textual.containers import Container, VerticalScroll
 from textual.widgets import Header, Label
@@ -7,6 +9,14 @@ from slashed.commands import SlashedCommand
 from slashed.completers import ChoiceCompleter
 from slashed.completion import CompletionProvider
 from slashed.textual_adapter.command_input import CommandInput
+
+
+@dataclass
+class AppState:
+    """Application state available to commands."""
+
+    theme: str = "light"
+    command_count: int = 0
 
 
 class ColorCommand(SlashedCommand):
@@ -34,7 +44,7 @@ class ColorCommand(SlashedCommand):
         await ctx.output.print(f"Changing color scheme to: {scheme}")
 
 
-class NewDemoApp(App[None]):
+class DemoApp(App[None]):
     """Demo app showing new command input with completion."""
 
     CSS = """
@@ -56,11 +66,12 @@ class NewDemoApp(App[None]):
         """Create app layout."""
         yield Header()
 
-        command_input = CommandInput(
+        command_input = CommandInput[AppState](
             placeholder="Type /help or /color <scheme>",
+            context_data=AppState(),
             enable_system_commands=True,
         )
-        command_input.register_command(ColorCommand())
+        command_input.store.register_command(ColorCommand())
         yield Container(command_input)
 
         # Output areas - IDs must match what CommandInput expects
@@ -69,5 +80,5 @@ class NewDemoApp(App[None]):
 
 
 if __name__ == "__main__":
-    app = NewDemoApp()
+    app = DemoApp()
     app.run()
