@@ -17,6 +17,7 @@ from slashed.textual_adapter.dropdown import CommandDropdown, CompletionOption
 
 if TYPE_CHECKING:
     from textual.events import Key
+    from textual.reactive import Reactive
 
     from slashed import CommandStore
     from slashed.base import CommandContext
@@ -32,10 +33,10 @@ class CommandInput(Input):
         border: solid $primary;
     }
     """
-    value: str
+    value: Reactive[str]
     cursor_position: int
 
-    BINDINGS: ClassVar[list[Binding]] = [
+    BINDINGS: ClassVar[list[Binding | tuple[str, str] | tuple[str, str, str]]] = [
         Binding("up", "navigate_up", "Previous suggestion", show=False),
         Binding("down", "navigate_down", "Next suggestion", show=False),
         Binding("escape", "hide_dropdown", "Hide suggestions", show=False),
