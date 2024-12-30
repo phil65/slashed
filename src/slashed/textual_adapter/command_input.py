@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from prompt_toolkit.document import Document
@@ -14,6 +15,7 @@ from textual.widgets import Input
 from slashed.completion import CompletionContext, CompletionItem
 from slashed.exceptions import CommandError, ExitCommandError
 from slashed.textual_adapter.dropdown import CommandDropdown, CompletionOption
+from slashed.textual_adapter.log import UINotificationHandler
 
 
 if TYPE_CHECKING:
@@ -49,6 +51,7 @@ class CommandInput(Input):
         data: Any | None = None,
         output_writer: TextualOutputWriter | None = None,
         placeholder: str = "Type a command...",
+        show_notifications: bool = False,
         *,
         id: str | None = None,  # noqa: A002
     ):
@@ -58,8 +61,12 @@ class CommandInput(Input):
             data=data, output_writer=output_writer
         )
         self._showing_dropdown = False
-        self._debug = True
         self._command_tasks: set[asyncio.Task[None]] = set()
+        self.logger = logging.getLogger(f"slashed.textual.command_input.{self.id}")
+        if show_notifications:
+            handler = UINotificationHandler(self)
+            handler.setLevel(logging.DEBUG)
+            self.logger.addHandler(handler)
 
     def on_key(self, event: Key) -> None:
         """Handle special keys."""
@@ -122,14 +129,12 @@ class CommandInput(Input):
 
         parts = self.value[1:].split()
 
-        if self._debug:
-            self.notify(f"Getting completions for parts: {parts}")
+        self.logger.debug("Getting completions for parts: %s", parts)
 
         # Command name completion
         if not parts or (len(parts) == 1 and not self.value.endswith(" ")):
             text = completion_context.current_word.lstrip("/")
-            if self._debug:
-                self.notify(f"Command completion for: '{text}'")
+            self.logger.debug("Command completion for: %r", text)
             matches = [
                 cmd for cmd in self.store.list_commands() if cmd.name.startswith(text)
             ]
@@ -158,8 +163,7 @@ class CommandInput(Input):
 
             # For other commands, use their completer
             if completer := command.get_completer():
-                if self._debug:
-                    self.notify(f"Found completer for command: {command_name}")
+                self.logger.debug("Found completer for command: %s", command_name)
 
                 # Create a new document for just the argument part
                 arg_text = parts[-1] if len(parts) > 1 else ""
@@ -169,18 +173,15 @@ class CommandInput(Input):
                 )
 
                 completions = list(completer.get_completions(arg_context))
-                if self._debug:
-                    self.notify(
-                        f"Got {len(completions)} completions from command completer"
-                    )
+                num = len(completions)
+                self.logger.debug("Got %s completions from command completer", num)
                 return completions
 
         return []
 
     def _update_completions(self) -> None:
         """Update the completion dropdown."""
-        if self._debug:
-            self.notify("Updating completions...")
+        self.logger.debug("Updating completions...")
 
         completions = self._get_completions()
         self._dropdown.clear_options()
@@ -190,8 +191,7 @@ class CommandInput(Input):
             options = [CompletionOption(completion) for completion in completions]
             self._dropdown.add_options(options)
 
-            if self._debug:
-                self.notify(f"Added {len(options)} options to dropdown")
+            self.logger.debug("Added %s options to dropdown", len(options))
 
             # Show dropdown
             self._showing_dropdown = True
@@ -205,8 +205,7 @@ class CommandInput(Input):
             if self._dropdown.option_count:
                 self._dropdown.highlighted = 0
         else:
-            if self._debug:
-                self.notify("No completions found, hiding dropdown")
+            self.logger.debug("No completions found, hiding dropdown")
             self.action_hide_dropdown()
 
     def action_hide_dropdown(self) -> None:
@@ -250,8 +249,7 @@ class CommandInput(Input):
                 parts.append(completion.text)
             new_value = "/" + " ".join(parts)
 
-        if self._debug:
-            self.notify(f"Accepting completion: {new_value}")
+        self.logger.debug("Accepting completion: %s", new_value)
 
         # Update value and move cursor to end
         self.value = new_value
@@ -277,8 +275,7 @@ class CommandInput(Input):
     @on(Input.Submitted)
     async def _handle_submit(self, event: Input.Submitted) -> None:
         """Handle command execution on submit."""
-        if self._debug:
-            self.notify(f"Submit event received: {self.value}")
+        self.logger.debug("Submit event received: %s", self.value)
 
         if self.value.startswith("/"):
             command = self.value[1:]  # Remove leading slash
@@ -288,8 +285,7 @@ class CommandInput(Input):
 
     def on_input_changed(self, message: Input.Changed) -> None:
         """Update completions when input changes."""
-        if self._debug:
-            self.notify(f"Input changed: {self.value}")
+        self.logger.debug("Input changed: %s", self.value)
 
         if self.value.startswith("/"):
             self._update_completions()
