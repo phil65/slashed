@@ -1,13 +1,12 @@
-"""Single-line command input widget with completion support."""
+"""Multi-line command input widget with completion support."""
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Literal
 
 from prompt_toolkit.document import Document
-from textual import on
 from textual.binding import Binding
-from textual.widgets import Input
+from textual.widgets import TextArea
 
 from slashed.completion import CompletionContext, CompletionItem
 from slashed.textual_adapter.command_base import CommandWidgetMixin
@@ -19,22 +18,21 @@ if TYPE_CHECKING:
     from textual.reactive import Reactive
 
 
-class CommandInput[TContext](Input, CommandWidgetMixin[TContext]):
-    """Single-line command input with completion support.
+class CommandTextArea[TContext](TextArea, CommandWidgetMixin[TContext]):
+    """Multi-line command input with completion support.
 
     Type Parameters:
         TContext: Type of the context data available to commands via ctx.get_data()
     """
 
     DEFAULT_CSS = """
-    CommandInput {
-        height: 3;
+    CommandTextArea {
+        height: 5;
         border: solid $primary;
     }
     """
 
     value: Reactive[str]
-    cursor_position: int
 
     BINDINGS: ClassVar[list[Binding | tuple[str, str] | tuple[str, str, str]]] = [
         Binding("up", "navigate_up", "Previous suggestion", show=False),
@@ -52,22 +50,28 @@ class CommandInput[TContext](Input, CommandWidgetMixin[TContext]):
         status_id: str | None = None,
         show_notifications: bool = False,
         enable_system_commands: bool = True,
+        # TextArea specific parameters
+        language: str | None = None,
+        theme: str = "css",
+        soft_wrap: bool = True,
+        tab_behavior: Literal["focus", "indent"] = "focus",
         # Widget parameters
-        name: str | None = None,
         id: str | None = None,  # noqa: A002
         classes: str | None = None,
         disabled: bool = False,
     ) -> None:
-        # First initialize CommandWidgetBase
-        Input.__init__(
+        # Initialize TextArea with its parameters
+        TextArea.__init__(
             self,
-            placeholder=placeholder,
-            name=name,
+            language=language,
+            theme=theme,
+            soft_wrap=soft_wrap,
+            tab_behavior=tab_behavior,
             id=id,
             classes=classes,
             disabled=disabled,
         )
-        # Initialize mixin
+        # Initialize base with shared parameters
         CommandWidgetMixin.__init__(
             self,
             context_data=context_data,
@@ -77,27 +81,56 @@ class CommandInput[TContext](Input, CommandWidgetMixin[TContext]):
             enable_system_commands=enable_system_commands,
         )
 
+        # Handle placeholder
+        self._placeholder = placeholder
+        self._showing_placeholder = False
+        if placeholder:
+            self._show_placeholder()
+
+    def _show_placeholder(self) -> None:
+        """Show placeholder text if no content."""
+        if not self.text and not self._showing_placeholder:
+            self._showing_placeholder = True
+            # Add placeholder with gray color
+            self.insert("[gray]" + self._placeholder)
+
+    def _hide_placeholder(self) -> None:
+        """Hide placeholder text."""
+        if self._showing_placeholder:
+            self.clear()
+            self._showing_placeholder = False
+
     # Protocol implementation
     def get_first_line(self) -> str:
-        return self.value
+        """Get the first line of input."""
+        return self.document.lines[0] if self.document.lines else ""
 
     def clear_input(self) -> None:
-        self.value = ""
+        """Clear all input."""
+        self.clear()
 
     def get_cursor_screen_position(self) -> tuple[int, int]:
+        """Get cursor position in screen coordinates."""
         return self.cursor_screen_offset
 
+    # Command completion handling
     def _get_completions(self) -> list[CompletionItem]:
-        document = Document(text=self.value, cursor_position=self.cursor_position)
+        # Only show completions if cursor is on first line and it's a command
+        if self.cursor_location[0] != 0 or not self.is_command_mode:
+            return []
+
+        first_line = self.get_first_line()
+        document = Document(text=first_line, cursor_position=self.cursor_location[1])
         completion_context = CompletionContext(
             document=document, command_context=self.context
         )
 
-        parts = self.value[1:].split()
+        parts = first_line[1:].split()
+
         self.logger.debug("Getting completions for parts: %s", parts)
 
         # Command name completion
-        if not parts or (len(parts) == 1 and not self.value.endswith(" ")):
+        if not parts or (len(parts) == 1 and not first_line.endswith(" ")):
             text = completion_context.current_word.lstrip("/")
             self.logger.debug("Command completion for: %r", text)
             matches = [
@@ -110,38 +143,22 @@ class CommandInput[TContext](Input, CommandWidgetMixin[TContext]):
 
         # Argument completion
         command_name = parts[0]
-        if command := self.store.get_command(command_name):
-            if command_name == "help":
-                # Special case for help command - filter by current argument
-                arg = parts[-1] if len(parts) > 1 else ""
-                self.logger.debug("Help completion for arg: %r", arg)
-                matches = [
-                    cmd for cmd in self.store.list_commands() if cmd.name.startswith(arg)
-                ]
-                return [
-                    CompletionItem(
-                        text=cmd.name,
-                        metadata=cmd.description,
-                        kind="command-arg",  # type: ignore
-                    )
-                    for cmd in matches
-                ]
+        if (command := self.store.get_command(command_name)) and (
+            completer := command.get_completer()
+        ):
+            self.logger.debug("Found completer for command: %s", command_name)
 
-            # For other commands, use their completer
-            if completer := command.get_completer():
-                self.logger.debug("Found completer for command: %s", command_name)
+            # Create a new document for just the argument part
+            arg_text = parts[-1] if len(parts) > 1 else ""
+            arg_document = Document(text=arg_text, cursor_position=len(arg_text))
+            arg_context = CompletionContext(
+                document=arg_document, command_context=self.context
+            )
 
-                # Create a new document for just the argument part
-                arg_text = parts[-1] if len(parts) > 1 else ""
-                arg_document = Document(text=arg_text, cursor_position=len(arg_text))
-                arg_context = CompletionContext(
-                    document=arg_document, command_context=self.context
-                )
-
-                self.logger.debug("Getting completions for argument: %r", arg_text)
-                completions = list(completer.get_completions(arg_context))
-                self.logger.debug("Got %d completions", len(completions))
-                return completions
+            completions = list(completer.get_completions(arg_context))
+            num = len(completions)
+            self.logger.debug("Got %s completions from command completer", num)
+            return completions
 
         return []
 
@@ -163,7 +180,7 @@ class CommandInput[TContext](Input, CommandWidgetMixin[TContext]):
             self._showing_dropdown = True
             self._dropdown.display = True
 
-            # Position dropdown
+            # Position dropdown below current line
             x, y = self.get_cursor_screen_position()
             self._dropdown.styles.offset = (x, y + 1)
 
@@ -214,11 +231,14 @@ class CommandInput[TContext](Input, CommandWidgetMixin[TContext]):
             new_value = "/" + " ".join(parts)
 
         self.logger.debug("Accepting completion: %s", new_value)
-        self.value = new_value
-        self.cursor_position = len(new_value)
+
+        # Update content using TextArea methods
+        self.clear()  # Clear current content
+        self.insert(new_value)  # Insert new content
+        # Move cursor to end using proper row/column calculation
+        self.move_cursor((0, len(new_value)))
         self.action_hide_dropdown()
 
-    # Event handlers
     def on_key(self, event: Key) -> None:
         """Handle special keys."""
         # First handle dropdown-specific keys
@@ -244,39 +264,43 @@ class CommandInput[TContext](Input, CommandWidgetMixin[TContext]):
                     # Only accept completion, don't execute yet
                     self.action_accept_completion()
                     event.prevent_default()
-                    # Don't stop event - let it continue to execute command
                     return
 
-        # Handle enter for command/text submission
-        if event.key == "enter":
-            if self.value.startswith("/"):
-                command = self.value[1:]
+        # Handle submission (Shift+Enter or Ctrl+Enter)
+        if event.key in ["shift+enter", "ctrl+enter"]:
+            if self.get_first_line().startswith("/"):
+                command = self.get_first_line()[1:]
                 self._create_command_task(command)
                 self.clear_input()
             else:
-                self.post_message(self.InputSubmitted(self.value))
+                self.post_message(self.InputSubmitted(self.text))
                 self.clear_input()
             event.prevent_default()
             event.stop()
 
-    @on(Input.Submitted)
-    async def _handle_submit(self, event: Input.Submitted) -> None:
-        """Handle input submission."""
-        text = self.get_first_line()
-        if text.startswith("/"):
-            command = text[1:]  # Remove leading slash
-            await self._execute_command(command)
+        # Handle enter for command/text submission
+        if event.key == "enter":
+            if self.is_command_mode:
+                command = self.get_first_line()[1:]  # Remove leading slash
+                self._create_command_task(command)
+            else:
+                self.post_message(self.InputSubmitted(self.text))
             self.clear_input()
+            event.prevent_default()
             event.stop()
-        else:
-            self.post_message(self.InputSubmitted(text))
-            self.clear_input()
 
-    def on_input_changed(self, message: Input.Changed) -> None:
-        """Update completions when input changes."""
-        self.logger.debug("Input changed: %s", self.value)
+    def on_text_area_changed(self, message: TextArea.Changed) -> None:
+        """Handle text changes."""
+        # Handle placeholder
+        if self._showing_placeholder and self.text != f"[gray]{self._placeholder}":
+            self._showing_placeholder = False
 
-        if self.value.startswith("/"):
+        if not self.text:
+            self._show_placeholder()
+            return
+
+        # Normal completion handling
+        if self.is_command_mode:
             self._update_completions()
         else:
             self.action_hide_dropdown()

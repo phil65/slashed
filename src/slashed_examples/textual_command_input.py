@@ -69,7 +69,7 @@ class DemoApp(App[None]):
         command_input = CommandInput[AppState](
             placeholder="Type /help to see commands",
             context_data=AppState(),
-            output_id="command-output",  # ID for the commnd output
+            output_id="main-output",  # ID for the commnd output
             status_id="status-area",  # ID for error messages and status
         )
         command_input.store.register_command(ColorCommand())
