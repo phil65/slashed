@@ -28,7 +28,7 @@ from slashed.store import CommandStore
 from slashed.registry import CommandRegistry
 
 
-__version__ = "0.7.5"
+__version__ = "0.7.6"
 
 __all__ = [  # noqa: RUF022
     # Core
