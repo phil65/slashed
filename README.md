@@ -335,6 +335,51 @@ ctx = store.create_context(
 await store.execute_command("admin", ctx)
 ```
 
+## Signal-Based Event System
+
+Slashed uses Psygnal to provide a robust event system for monitoring command execution and output. This makes it easy to track command usage, handle errors, and integrate with UIs.
+
+```python
+from slashed import CommandStore
+
+store = CommandStore()
+
+# Monitor command execution
+@store.command_executed.connect
+def on_command_executed(event):
+    """Handle command execution results."""
+    if event.success:
+        print(f"Command '{event.command}' succeeded")
+    else:
+        print(f"Command '{event.command}' failed: {event.error}")
+
+# Monitor command output
+@store.output.connect
+def on_output(message: str):
+    """Handle command output."""
+    print(f"Output: {message}")
+
+# Monitor command registry changes
+@store.command_events.adding.connect
+def on_command_added(name: str, command):
+    print(f"New command registered: {name}")
+
+# Monitor context registry changes
+@store.context_events.adding.connect
+def on_context_added(type_: type, context):
+    print(f"New context registered: {type_.__name__}")
+```
+
+### Available Signals
+
+- `command_executed`: Emitted after command execution (success/failure)
+- `output`: Emitted for all command output
+- `command_events`: EventedDict signals for command registry changes
+- `context_events`: EventedDict signals for context registry changes
+
+The signal system provides a clean way to handle events without tight coupling, making it ideal for UI integration and logging.
+
+
 ## UI Integration Examples
 
 Slashed provides integrations for both prompt_toolkit and Textual:
