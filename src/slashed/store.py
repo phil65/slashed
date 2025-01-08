@@ -120,8 +120,8 @@ class CommandStore:
     def create_completion_context(
         self,
         document: Document,
-        command_context: CommandContext | None = None,
-    ) -> CompletionContext:
+        command_context: CommandContext[TContextData] | None = None,
+    ) -> CompletionContext[TContextData]:
         """Create a completion context."""
         return CompletionContext(document, command_context)
 
@@ -200,7 +200,7 @@ class CommandStore:
             result.setdefault(cmd.category, []).append(cmd)
         return result
 
-    async def execute_command(self, command_str: str, ctx: CommandContext):
+    async def execute_command(self, command_str: str, ctx: CommandContext[TContextData]):
         """Execute a command from string input.
 
         Args:
