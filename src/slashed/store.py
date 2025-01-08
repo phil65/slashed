@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from importlib import import_module
+import inspect
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from slashed.base import Command, CommandContext, ExecuteFunc, OutputWriter, parse_command
@@ -219,6 +220,35 @@ class CommandStore:
             if not command:
                 msg = f"Unknown command: {parsed.name}"
                 raise CommandError(msg)  # noqa: TRY301
+
+            # Check for --help flag, but only handle it if command doesn't use it
+            if "help" in parsed.args.kwargs:
+                # Check command signature via inspect
+                sig = inspect.signature(command.execute)
+                help_param = next(
+                    (p for p in sig.parameters.items() if p[0] == "help"), None
+                )
+
+                # Only show our help if command doesn't handle help parameter
+                if not help_param:
+                    sections = [
+                        f"Command: /{command.name}",
+                        f"Category: {command.category}",
+                        "",
+                        "Description:",
+                        command.description,
+                        "",
+                    ]
+                    if command.usage:
+                        sections.extend([
+                            "Usage:",
+                            f"/{command.name} {command.usage}",
+                            "",
+                        ])
+                    if command.help_text:
+                        sections.extend(["Help:", command.help_text])
+                    await ctx.output.print("\n".join(sections))
+                    return
 
             msg = "Executing command: %s (args=%s, kwargs=%s)"
             logger.debug(msg, parsed.name, parsed.args.args, parsed.args.kwargs)
