@@ -19,6 +19,7 @@ from slashed.base import (
 )
 from slashed.builtin import get_system_commands
 from slashed.completion import CompletionContext, CompletionProvider
+from slashed.context import ContextRegistry
 from slashed.events import CommandExecutedEvent
 from slashed.exceptions import CommandError
 from slashed.log import get_logger
@@ -35,6 +36,7 @@ if TYPE_CHECKING:
     import os
 
     from prompt_toolkit.document import Document
+    from psygnal.containers._evented_dict import DictEvents
 
     from slashed.commands import SlashedCommand
 
@@ -64,12 +66,21 @@ class CommandStore:
                                   Disabled by default for security.
         """
         self._commands = EventedDict[str, BaseCommand]()
+        self._contexts = ContextRegistry()
         self._command_history: list[str] = []
         self._history_path = Path(history_file) if history_file else None
         self._enable_system_commands = enable_system_commands
         self._initialized = False
         if self._history_path:
             self._history_path.parent.mkdir(parents=True, exist_ok=True)
+
+    @property
+    def command_events(self) -> DictEvents[str, BaseCommand]:
+        return self._commands.events
+
+    @property
+    def context_events(self) -> DictEvents[str, object]:
+        return self._contexts._contexts.events
 
     def _initialize_sync(self):
         """Initialize the store synchronously."""
@@ -138,6 +149,84 @@ class CommandStore:
     ) -> CompletionContext[TContextData]:
         """Create a completion context."""
         return CompletionContext(document, command_context)
+
+    # Context management methods
+    def register_context(
+        self,
+        data: object,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        """Register a typed context.
+
+        Example:
+            ```python
+            @dataclass
+            class DBContext:
+                connection: str
+                timeout: int = 30
+
+            store = CommandStore()
+            store.register_context(DBContext("mysql://..."))
+            ```
+        """
+        self._contexts.register(data, metadata)
+
+    def get_context[T](self, context_type: type[T]) -> T:
+        """Get a typed context.
+
+        Example:
+            ```python
+            db_ctx = store.get_context(DBContext)
+            # db_ctx is properly typed as DBContext
+            ```
+        """
+        return self._contexts.get(context_type)
+
+    def unregister_context(self, context_type: type) -> None:
+        """Unregister a context type."""
+        self._contexts.unregister(context_type)
+
+    async def execute_command_auto(
+        self,
+        command_str: str,
+        fallback_context: Any | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        """Execute command with automatic context matching.
+
+        Args:
+            command_str: Command to execute
+            fallback_context: Optional context to use if no match found
+            metadata: Additional metadata for context
+
+        Example:
+            ```python
+            # Will automatically use DBContext for database commands
+            # and UIContext for UI commands
+            await store.execute_command_auto("/query select * from users")
+            ```
+
+        Raises:
+            CommandError: If no matching context is found and no fallback provided
+        """
+        parsed = parse_command(command_str)
+        command = self.get_command(parsed.name)
+        if not command:
+            msg = f"Unknown command: {parsed.name}"
+            raise CommandError(msg)
+
+        # Try to find matching context
+        if reg := self._contexts.match_command(command):
+            ctx: CommandContext[Any] = self.create_context(
+                reg.data, metadata=reg.metadata
+            )
+        elif fallback_context is not None:
+            ctx = self.create_context(fallback_context, metadata=metadata)
+        else:
+            msg = f"No matching context found for command {command.name}"
+            raise CommandError(msg)
+
+        await self.execute_command(command_str, ctx)
 
     def register_command(self, command: type[SlashedCommand] | BaseCommand):
         """Register a new command.

@@ -71,7 +71,7 @@ class ContextRegistry:
 
     def __init__(self) -> None:
         """Initialize an empty context registry."""
-        self._contexts: EventedDict[type, ContextRegistration] = EventedDict()
+        self._contexts = EventedDict[type, ContextRegistration]()
 
     def register(
         self,
