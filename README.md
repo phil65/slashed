@@ -372,6 +372,52 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
+## Type-Safe Context System
+
+Slashed provides a powerful context system that automatically matches commands with their required context data based on type hints. This allows for type-safe access to application state while keeping commands decoupled from specific implementations.
+
+### Basic Usage
+
+```python
+from dataclasses import dataclass
+from slashed import SlashedCommand, CommandStore, CommandContext
+
+# Define your contexts
+@dataclass
+class DatabaseContext:
+    """Database connection context."""
+    connection: str
+    timeout: int = 30
+
+@dataclass
+class UIContext:
+    """UI context."""
+    theme: str = "dark"
+
+# Commands specify their required context type
+class QueryCommand(SlashedCommand):
+    """Execute a database query."""
+    name = "query"
+
+    async def execute_command(
+        self,
+        ctx: CommandContext[DatabaseContext],  # Type hint determines required context
+        query: str,
+    ):
+        db = ctx.get_data()  # Properly typed as DatabaseContext
+        await ctx.output.print(f"Executing {query} with timeout {db.timeout}")
+
+# Register contexts and commands
+store = CommandStore()
+store.register_context(DatabaseContext("mysql://localhost"))
+store.register_context(UIContext("light"))
+
+# Commands automatically get their matching context
+await store.execute_command_auto("/query select * from users")
+```
+
+
+
 ### Textual App
 
 ```python
