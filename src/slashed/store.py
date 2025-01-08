@@ -6,12 +6,23 @@ from importlib import import_module
 import inspect
 from typing import TYPE_CHECKING, Any, TypeVar
 
-from slashed.base import Command, CommandContext, ExecuteFunc, OutputWriter, parse_command
+from psygnal import Signal
+from psygnal.containers import EventedDict
+
+from slashed.base import (
+    BaseCommand,
+    Command,
+    CommandContext,
+    ExecuteFunc,
+    OutputWriter,
+    parse_command,
+)
 from slashed.builtin import get_system_commands
 from slashed.completion import CompletionContext, CompletionProvider
+from slashed.events import CommandExecutedEvent
 from slashed.exceptions import CommandError
 from slashed.log import get_logger
-from slashed.output import DefaultOutputWriter
+from slashed.output import DefaultOutputWriter, SignalingOutputWriter
 
 
 try:
@@ -25,7 +36,6 @@ if TYPE_CHECKING:
 
     from prompt_toolkit.document import Document
 
-    from slashed.base import BaseCommand
     from slashed.commands import SlashedCommand
 
 
@@ -36,6 +46,9 @@ TCommandFunc = TypeVar("TCommandFunc", bound=ExecuteFunc)
 
 class CommandStore:
     """Central store for command management and history."""
+
+    command_executed = Signal(CommandExecutedEvent)
+    output = Signal(str)
 
     def __init__(
         self,
@@ -50,7 +63,7 @@ class CommandStore:
             enable_system_commands: Whether to enable system execution commands.
                                   Disabled by default for security.
         """
-        self._commands: dict[str, BaseCommand] = {}
+        self._commands = EventedDict[str, BaseCommand]()
         self._command_history: list[str] = []
         self._history_path = Path(history_file) if history_file else None
         self._enable_system_commands = enable_system_commands
@@ -113,7 +126,8 @@ class CommandStore:
         Returns:
             Command execution context
         """
-        writer = output_writer or DefaultOutputWriter()
+        base_writer = output_writer or DefaultOutputWriter()
+        writer = SignalingOutputWriter(self.output, base_writer)
         meta = metadata or {}
         return CommandContext(output=writer, data=data, command_store=self, metadata=meta)
 
@@ -143,7 +157,6 @@ class CommandStore:
         if command.name in self._commands:
             msg = f"Command '{command.name}' already registered"
             raise ValueError(msg)
-
         self._commands[command.name] = command
         logger.debug("Registered command: %s", command.name)
 
@@ -252,13 +265,25 @@ class CommandStore:
 
             msg = "Executing command: %s (args=%s, kwargs=%s)"
             logger.debug(msg, parsed.name, parsed.args.args, parsed.args.kwargs)
-            # Execute it
+            # Execute it with all args, letting command handle help if it wants to
             await command.execute(ctx, parsed.args.args, parsed.args.kwargs)
-
+            self.command_executed.emit(
+                CommandExecutedEvent(
+                    command=command_str, context=ctx, success=True, error=None
+                )
+            )
         except CommandError:
             raise
         except Exception as e:
             msg = f"Command execution failed: {e}"
+            self.command_executed.emit(
+                CommandExecutedEvent(
+                    command=command_str,
+                    context=ctx,
+                    success=False,
+                    error=e,
+                )
+            )
             raise CommandError(msg) from e
 
     async def execute_command_with_context[T](

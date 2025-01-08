@@ -36,6 +36,7 @@ license = { file = "LICENSE" }
 dependencies = [
     # Only add below (Copier)
     "psutil>=6.1.1",
+    "psygnal>=0.11.1",
 ]
 
 [tool.uv]
