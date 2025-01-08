@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class TestData:
+class _TestData:
     """Test data for command context."""
 
     value: str = "test"
@@ -30,9 +30,9 @@ def store() -> CommandStore:
 
 
 @pytest.fixture
-def context(store: CommandStore) -> CommandContext[TestData]:
+def context(store: CommandStore) -> CommandContext[_TestData]:
     """Fixture providing command context."""
-    return store.create_context(TestData())
+    return store.create_context(_TestData())
 
 
 async def test_command_signals(store: CommandStore, context: CommandContext):
@@ -154,11 +154,11 @@ async def test_command_signals(store: CommandStore, context: CommandContext):
 
     async def test_context_creation(store: CommandStore):
         """Test context creation with typed data."""
-        data = TestData(value="test-value")
+        data = _TestData(value="test-value")
         ctx = store.create_context(data)
 
         # Test context data typing
-        assert isinstance(ctx.data, TestData)
+        assert isinstance(ctx.data, _TestData)
         assert ctx.get_data().value == "test-value"
 
         # Test signal connection
