@@ -75,11 +75,11 @@ class CommandStore:
             self._history_path.parent.mkdir(parents=True, exist_ok=True)
 
     @property
-    def command_events(self) -> DictEvents[str, BaseCommand]:
+    def command_events(self) -> DictEvents:
         return self._commands.events
 
     @property
-    def context_events(self) -> DictEvents[str, object]:
+    def context_events(self) -> DictEvents:
         return self._contexts._contexts.events
 
     def _initialize_sync(self):
