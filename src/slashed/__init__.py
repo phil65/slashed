@@ -23,7 +23,13 @@ from slashed.completers import (
     PathCompleter,
 )
 from slashed.exceptions import CommandError, ExitCommandError
-from slashed.output import DefaultOutputWriter
+from slashed.output import (
+    DefaultOutputWriter,
+    QueueOutputWriter,
+    CallbackOutputWriter,
+    TransformOutputWriter,
+    SignalingOutputWriter,
+)
 from slashed.store import CommandStore
 from slashed.registry import CommandRegistry
 
@@ -43,6 +49,10 @@ __all__ = [  # noqa: RUF022
     "SlashedCommand",
     "parse_command",
     "CommandRegistry",
+    "CallbackOutputWriter",
+    "QueueOutputWriter",
+    "TransformOutputWriter",
+    "SignalingOutputWriter",
     # Completion
     "CompletionContext",
     "CompletionItem",
