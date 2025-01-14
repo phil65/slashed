@@ -9,6 +9,7 @@ from slashed.base import OutputWriter
 
 
 if TYPE_CHECKING:
+    import asyncio
     from collections.abc import Awaitable, Callable
 
     from psygnal import SignalInstance
@@ -40,6 +41,16 @@ class DefaultOutputWriter(OutputWriter):
             self._console.print(message)
         else:
             print(message, file=sys.stdout)
+
+
+class QueueOutputWriter(DefaultOutputWriter):
+    """Output writer that puts messages in queue."""
+
+    def __init__(self, queue: asyncio.Queue[str]):
+        self.queue = queue
+
+    async def print(self, message: str):
+        await self.queue.put(message)
 
 
 class CallbackOutputWriter(OutputWriter):
