@@ -23,7 +23,11 @@ from slashed.context import ContextRegistry
 from slashed.events import CommandExecutedEvent
 from slashed.exceptions import CommandError
 from slashed.log import get_logger
-from slashed.output import DefaultOutputWriter, SignalingOutputWriter
+from slashed.output import (
+    CallbackOutputWriter,
+    DefaultOutputWriter,
+    SignalingOutputWriter,
+)
 
 
 try:
@@ -124,7 +128,7 @@ class CommandStore:
     def create_context[TContextData](
         self,
         data: TContextData | None,
-        output_writer: OutputWriter | None = None,
+        output_writer: OutputWriter | Callable[..., Any] | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> CommandContext[TContextData]:
         """Create a command execution context.
@@ -137,6 +141,8 @@ class CommandStore:
         Returns:
             Command execution context
         """
+        if callable(output_writer):
+            output_writer = CallbackOutputWriter(output_writer)
         base_writer = output_writer or DefaultOutputWriter()
         writer = SignalingOutputWriter(self.output, base_writer)
         meta = metadata or {}
@@ -379,7 +385,7 @@ class CommandStore:
         self,
         command_str: str,
         context: T | None = None,  # type: ignore[type-var]
-        output_writer: OutputWriter | None = None,
+        output_writer: OutputWriter | Callable[..., Any] | None = None,
         metadata: dict[str, Any] | None = None,
     ):
         """Execute a command with a custom context.
