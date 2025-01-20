@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 import sys
 from typing import TYPE_CHECKING, Any
 
@@ -56,22 +57,28 @@ class QueueOutputWriter(DefaultOutputWriter):
 class CallbackOutputWriter(OutputWriter):
     """Output writer that directly delegates printing to a callback function.
 
-    The callback is fully responsible for how the message is displayed/written.
-    Use this when you need complete control over the output process.
+    The callback can be either sync or async and is fully responsible for how
+    the message is displayed/written.
 
-    Example:
+    Examples:
         ```python
+        # Async callback
         async def log_to_file(msg: str, file: str) -> None:
             with open(file, "a") as f:
                 f.write(msg)
 
-        writer = CallbackOutputWriter(log_to_file, "output.log")
+        # Sync callback
+        def print_to_console(msg: str, prefix: str) -> None:
+            print(f"{prefix}: {msg}")
+
+        writer1 = CallbackOutputWriter(log_to_file, "output.log")
+        writer2 = CallbackOutputWriter(print_to_console, prefix="Debug")
         ```
     """
 
     def __init__(
         self,
-        callback: Callable[..., Awaitable[None]],
+        callback: Callable[..., Any | Awaitable[Any]],
         *args: Any,
         **kwargs: Any,
     ) -> None:
@@ -82,7 +89,9 @@ class CallbackOutputWriter(OutputWriter):
 
     async def print(self, message: str) -> None:
         """Write message using callback."""
-        await self._callback(message, *self._args, **self._kwargs)
+        result = self._callback(message, *self._args, **self._kwargs)
+        if inspect.isawaitable(result):
+            await result
 
 
 class TransformOutputWriter(OutputWriter):
