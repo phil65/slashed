@@ -22,6 +22,7 @@ from slashed.completers import (
     MultiValueCompleter,
     PathCompleter,
 )
+from slashed.router import CommandRouter, Route, RouteInfo, ParsedRoute
 from slashed.exceptions import CommandError, ExitCommandError
 from slashed.output import (
     DefaultOutputWriter,
@@ -41,6 +42,10 @@ __all__ = [  # noqa: RUF022
     "BaseCommand",
     "Command",
     "CommandContext",
+    "CommandRouter",
+    "Route",
+    "RouteInfo",
+    "ParsedRoute",
     "CommandError",
     "CommandStore",
     "OutputWriter",

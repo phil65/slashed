@@ -522,6 +522,61 @@ Both integrations support:
 - Rich output formatting
 
 
+## Command Routing System
+
+Slashed provides a flexible routing system that allows organizing commands into different contexts with explicit permissions:
+
+```python
+from dataclasses import dataclass
+from slashed import CommandRouter, CommandStore, SlashedCommand
+
+# Define contexts for different subsystems
+@dataclass
+class GlobalContext:
+    """Global application context."""
+    env: str = "production"
+
+@dataclass
+class DatabaseContext:
+    """Database connection context."""
+    connection: str
+    timeout: int = 30
+
+# Create store and router
+store = CommandStore()
+router = CommandRouter[GlobalContext, DatabaseContext](
+    global_context=GlobalContext(),
+    commands=store,
+)
+
+# Add route with restricted commands
+router.add_route(
+    "db",
+    DatabaseContext("mysql://localhost"),
+    description="Database operations",
+    allowed_commands={"query", "migrate"},  # Only allow specific commands
+)
+
+# Execute commands with proper routing
+await router.execute("help", output)  # Uses global context
+await router.execute("@db query 'SELECT 1'", output)  # Uses DB context
+
+# Temporary context switching
+with router.temporary_context(db_context):
+    await router.execute("query 'SELECT 1'", output)  # No prefix needed
+```
+
+The routing system provides:
+- Route-specific command permissions
+- Automatic context switching
+- Command prefix completion (@db, @fs, etc.)
+- Type-safe context handling
+- Temporary context overrides
+- Clear separation of subsystems
+
+This makes it easy to organize commands into logical groups while maintaining type safety and proper access control.
+
+
 ## Documentation
 
 For full documentation including advanced usage and API reference, visit [phil65.github.io/slashed](https://phil65.github.io/slashed).
