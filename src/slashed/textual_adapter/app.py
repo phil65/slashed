@@ -10,6 +10,7 @@ from textual.widgets import Input, Label
 
 from slashed.base import BaseCommand, OutputWriter
 from slashed.log import get_logger
+from slashed.output import SignalingOutputWriter
 from slashed.store import CommandStore
 from slashed.textual_adapter.suggester import SlashedSuggester
 
@@ -159,7 +160,7 @@ class SlashedApp[TContext, TResult](App[TResult]):  # type: ignore[type-var]
             default: Whether this is the default output
         """
         writer = self.context.output
-        if not isinstance(writer, TextualOutputWriter):
+        if not isinstance(writer, TextualOutputWriter | SignalingOutputWriter):
             msg = "Output writer is not a TextualOutputWriter"
             raise TypeError(msg)
         writer.bind(output_id, widget_query, default=default)

@@ -142,3 +142,6 @@ class SignalingOutputWriter(OutputWriter):
     async def print(self, message: str) -> None:
         self._output_signal.emit(message)
         await self._base_writer.print(message)
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._base_writer, name)
