@@ -14,7 +14,7 @@ from slashed.utils import get_first_line
 
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator
+    from collections.abc import AsyncIterable, Iterable
 
     from prompt_toolkit.document import Document
 
@@ -26,12 +26,7 @@ logger = get_logger(__name__)
 
 
 class PromptToolkitCompleter[TContextData](Completer):
-    """Adapts our completion system to prompt-toolkit.
-
-    Type Parameters:
-        TContextData: Type of the data in the associated CommandContext. Used when
-                     completions need to access typed context data.
-    """
+    """Adapts our completion system to prompt-toolkit."""
 
     def __init__(
         self,
@@ -54,11 +49,15 @@ class PromptToolkitCompleter[TContextData](Completer):
             data, output_writer, metadata
         )
 
-    async def get_completions(
-        self,
-        document: Document,
-        complete_event: Any,
-    ) -> AsyncIterator[Completion]:
+    def get_completions(
+        self, document: Document, complete_event: Any
+    ) -> Iterable[Completion]:
+        """Sync completions - not used but required by interface."""
+        return []
+
+    async def get_completions_async(
+        self, document: Document, complete_event: Any
+    ) -> AsyncIterable[Completion]:
         """Get completions for the current context."""
         text = document.text.lstrip()
 
@@ -83,7 +82,7 @@ class PromptToolkitCompleter[TContextData](Completer):
                         start_pos = -len(current_word) if current_word else 0
                         yield Completion(
                             item.text,
-                            start_pos,
+                            start_position=start_pos,
                             display_meta=get_first_line(item.metadata),
                         )
                     return
@@ -93,7 +92,9 @@ class PromptToolkitCompleter[TContextData](Completer):
             for cmd in self._store.list_commands():
                 if cmd.name.startswith(word):
                     yield Completion(
-                        cmd.name, -len(word), display_meta=get_first_line(cmd.description)
+                        cmd.name,
+                        start_position=-len(word),
+                        display_meta=get_first_line(cmd.description),
                     )
 
         except RuntimeError as e:
