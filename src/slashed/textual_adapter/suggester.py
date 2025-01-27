@@ -60,7 +60,9 @@ class SlashedSuggester(Suggester):
                     if completer := command.get_completer():
                         current_word = completion_context.current_word
                         # Find first matching completion
-                        for completion in completer.get_completions(completion_context):
+                        async for completion in completer.get_completions(
+                            completion_context
+                        ):
                             if not current_word or completion.text.startswith(
                                 current_word
                             ):

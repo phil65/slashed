@@ -87,7 +87,7 @@ class CommandInput[TContext](Input, CommandWidgetMixin[TContext]):
     def get_cursor_screen_position(self) -> tuple[int, int]:
         return self.cursor_screen_offset
 
-    def _get_completions(self) -> list[CompletionItem]:
+    async def _get_completions(self) -> list[CompletionItem]:
         document = Document(text=self.value, cursor_position=self.cursor_position)
         completion_context = CompletionContext(
             document=document, command_context=self.context
@@ -139,17 +139,17 @@ class CommandInput[TContext](Input, CommandWidgetMixin[TContext]):
                 )
 
                 self.logger.debug("Getting completions for argument: %r", arg_text)
-                completions = list(completer.get_completions(arg_context))
+                completions = [i async for i in completer.get_completions(arg_context)]
                 self.logger.debug("Got %d completions", len(completions))
                 return completions
 
         return []
 
-    def _update_completions(self) -> None:
+    async def _update_completions(self) -> None:
         """Update the completion dropdown."""
         self.logger.debug("Updating completions...")
 
-        completions = self._get_completions()
+        completions = await self._get_completions()
         self._dropdown.clear_options()
 
         if completions:
@@ -272,11 +272,11 @@ class CommandInput[TContext](Input, CommandWidgetMixin[TContext]):
             self.post_message(self.InputSubmitted(text))
             self.clear_input()
 
-    def on_input_changed(self, message: Input.Changed) -> None:
+    async def on_input_changed(self, message: Input.Changed) -> None:
         """Update completions when input changes."""
         self.logger.debug("Input changed: %s", self.value)
 
         if self.value.startswith("/"):
-            self._update_completions()
+            await self._update_completions()
         else:
             self.action_hide_dropdown()

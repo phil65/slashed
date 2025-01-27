@@ -94,7 +94,7 @@ class CommandTextArea[TContext](TextArea, CommandWidgetMixin[TContext]):
         """Get cursor position in screen coordinates."""
         return self.cursor_screen_offset
 
-    def _get_completions(self) -> list[CompletionItem]:
+    async def _get_completions(self) -> list[CompletionItem]:
         first_line = self.get_first_line()
         if not first_line.startswith("/"):
             return []
@@ -152,17 +152,17 @@ class CommandTextArea[TContext](TextArea, CommandWidgetMixin[TContext]):
                 )
 
                 self.logger.debug("Getting completions for argument: %r", arg_text)
-                completions = list(completer.get_completions(arg_context))
+                completions = [i async for i in completer.get_completions(arg_context)]
                 self.logger.debug("Got %d completions", len(completions))
                 return completions
 
         return []
 
-    def _update_completions(self) -> None:
+    async def _update_completions(self) -> None:
         """Update the completion dropdown."""
         self.logger.debug("Updating completions...")
 
-        completions = self._get_completions()
+        completions = await self._get_completions()
         self._dropdown.clear_options()
 
         if completions:
@@ -294,9 +294,9 @@ class CommandTextArea[TContext](TextArea, CommandWidgetMixin[TContext]):
                 event.prevent_default()
                 event.stop()
 
-    def on_text_area_changed(self, message: TextArea.Changed) -> None:
+    async def on_text_area_changed(self, message: TextArea.Changed) -> None:
         """Handle text changes."""
         if self.is_command_mode:
-            self._update_completions()
+            await self._update_completions()
         else:
             self.action_hide_dropdown()
