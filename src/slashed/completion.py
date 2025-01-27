@@ -12,7 +12,7 @@ from slashed.log import get_logger
 
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import AsyncIterator
 
     from prompt_toolkit.document import Document
 
@@ -142,16 +142,8 @@ class CompletionProvider(ABC):
     def get_completions(
         self,
         context: CompletionContext,
-    ) -> Iterator[CompletionItem]:
-        """Get completion suggestions.
-
-        Args:
-            context: Current completion context
-
-        Returns:
-            Iterator of completion suggestions
-        """
-        ...
+    ) -> AsyncIterator[CompletionItem]:
+        """Get completion suggestions."""
 
 
 class CommandCompleter:
@@ -170,10 +162,10 @@ class CommandCompleter:
         """Add a global completion provider."""
         self._global_providers.append(provider)
 
-    def get_completions(
+    async def get_completions(
         self,
         context: CompletionContext,
-    ) -> Iterator[CompletionItem]:
+    ) -> AsyncIterator[CompletionItem]:
         """Get completions for the current context."""
         # If at start of command, complete command names
         logger.debug("Getting completions for command %s", context.command_name)
@@ -193,12 +185,15 @@ class CommandCompleter:
                     yield CompletionItem(text=name, metadata=meta, kind="command")
             return
         # Get command-specific completions
+        # Get command-specific completions
         command = self._commands.get(context.command_name)
         if command and (completer := command.get_completer()):
             logger.debug("Fetching completions for command %s", command.name)
-            yield from completer.get_completions(context)  # type: ignore
+            async for item in completer.get_completions(context):
+                yield item
 
         # Get global completions
         for provider in self._global_providers:
             logger.debug("Fetching completions for provider %r", provider)
-            yield from provider.get_completions(context)
+            async for item in provider.get_completions(context):
+                yield item

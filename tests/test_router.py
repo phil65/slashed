@@ -241,7 +241,8 @@ class TestContextSwitching:
 class TestCompletion:
     """Test command completion with routing."""
 
-    def test_route_completion(self, router: CommandRouter):
+    @pytest.mark.asyncio  # Add this if not already present
+    async def test_route_completion(self, router: CommandRouter):
         """Test completing route prefixes."""
         doc = MagicMock()
         doc.text = "@"
@@ -249,14 +250,14 @@ class TestCompletion:
         doc.get_word_before_cursor.return_value = "@"
         context: CompletionContext[Any] = CompletionContext(doc)
 
-        # Create command store context for completions
         store_ctx: CommandContext[Any] = router.commands.create_context(
             router.global_context,
             output_writer=_TestOutputWriter(),
         )
         context._command_context = store_ctx
 
-        completions = list(router.get_completions(context))
+        # Use list comprehension with async for
+        completions = [item async for item in router.get_completions(context)]
         assert len(completions) == 2  # noqa: PLR2004
         assert any(c.text == "@db" for c in completions)
         assert any(c.text == "@fs" for c in completions)
@@ -268,30 +269,28 @@ class TestCompletion:
         context = CompletionContext[Any](doc)
         context._command_context = store_ctx
 
-        completions = list(router.get_completions(context))
+        completions = [item async for item in router.get_completions(context)]
         assert len(completions) == 1
         assert completions[0].text == "@db"
 
-    def test_command_completion(self, router: CommandRouter):
+    @pytest.mark.asyncio
+    async def test_command_completion(self, router: CommandRouter):
         """Test completing commands with routing."""
         doc = MagicMock()
-        # For "@db " completion
         doc.text = "@db "
         doc.cursor_position = len("@db ")
         doc.get_word_before_cursor.return_value = ""
         context: CompletionContext[Any] = CompletionContext(doc)
 
-        # Create command store context for completions
         store_ctx: CommandContext[Any] = router.commands.create_context(
             router._routes["db"].context,
             output_writer=_TestOutputWriter(),
         )
         context._command_context = store_ctx
 
-        completions = list(router.get_completions(context))
-        assert any(c.text == "query" for c in completions), (
-            "Expected 'query' in completions"
-        )
+        # Use list comprehension with async for
+        completions = [item async for item in router.get_completions(context)]
+        assert any(c.text == "query" for c in completions)
 
         # Test completing global commands
         doc.text = "t"
@@ -299,17 +298,14 @@ class TestCompletion:
         doc.get_word_before_cursor.return_value = "t"
         context = CompletionContext[Any](doc)
 
-        # Use global context for completion
         store_ctx = router.commands.create_context(
             router.global_context,
             output_writer=_TestOutputWriter(),
         )
         context._command_context = store_ctx
 
-        completions = list(router.get_completions(context))
-        assert any(c.text == "test" for c in completions), (
-            "Expected 'test' in completions"
-        )
+        completions = [item async for item in router.get_completions(context)]
+        assert any(c.text == "test" for c in completions)
 
 
 class TestErrorHandling:

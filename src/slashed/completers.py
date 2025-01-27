@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from copy import copy
+import inspect
 import os
 from typing import TYPE_CHECKING, Any
 
@@ -11,6 +13,9 @@ try:
     from upath import UPath as Path
 except ImportError:
     from pathlib import Path
+
+from collections.abc import Awaitable, Iterable
+from typing import TypeGuard, TypeVar, cast
 
 from slashed import utils
 from slashed.completion import CompletionItem, CompletionProvider
@@ -21,12 +26,22 @@ type PathType = str | os.PathLike[str]
 
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Iterator, Sequence
+    from collections.abc import (
+        Awaitable,
+        Callable,
+        Sequence,
+    )
 
     from slashed.completion import CompletionContext
     from slashed.slashed_types import CompletionKind
 
 logger = get_logger(__name__)
+T = TypeVar("T")
+
+
+def is_awaitable(obj: Awaitable[T] | T) -> TypeGuard[Awaitable[T]]:
+    """Type guard to check if object is awaitable."""
+    return inspect.isawaitable(obj)
 
 
 class PathCompleter(CompletionProvider):
@@ -59,10 +74,10 @@ class PathCompleter(CompletionProvider):
         self.expanduser = expanduser
         self.base_path = Path(base_path).resolve() if base_path else None
 
-    def get_completions(
+    async def get_completions(
         self,
         context: CompletionContext,
-    ) -> Iterator[CompletionItem]:
+    ) -> AsyncIterator[CompletionItem]:
         """Get path completions."""
         word = context.current_word or "."
 
@@ -150,10 +165,10 @@ class EnvVarCompleter(CompletionProvider):
         self.prefixes = prefixes
         self.include_values = include_values
 
-    def get_completions(
+    async def get_completions(
         self,
         context: CompletionContext,
-    ) -> Iterator[CompletionItem]:
+    ) -> AsyncIterator[CompletionItem]:
         """Get environment variable completions."""
         word = context.current_word.lstrip("$")
 
@@ -188,10 +203,10 @@ class ChoiceCompleter(CompletionProvider):
             self.choices = list(choices)
             self.descriptions = {}
 
-    def get_completions(
+    async def get_completions(
         self,
         context: CompletionContext,
-    ) -> Iterator[CompletionItem]:
+    ) -> AsyncIterator[CompletionItem]:
         """Get matching choices."""
         word = context.current_word
         if self.ignore_case:
@@ -225,28 +240,37 @@ class MultiValueCompleter(CompletionProvider):
         self.delimiter = delimiter
         self.strip = strip
 
-    def get_completions(
+    async def get_completions(
         self,
         context: CompletionContext,
-    ) -> Iterator[CompletionItem]:
+    ) -> AsyncIterator[CompletionItem]:
         """Get completions for current value."""
-        # Split into values and get current value
-        values = context.current_word.split(self.delimiter)
-        current = values[-1]
+        # Use full text instead of just current_word for splitting
+        full_text = context._document.text
+        values = full_text.split(self.delimiter)
+
+        # Current value is what's being typed
+        current = context.current_word
         if self.strip:
             current = current.strip()
+
+        # Create modified context with just the current value
         mod_context = copy(context)
         mod_context._current_word = current  # type: ignore[attr-defined]
 
-        # Get completions from base provider
-        prefix = self.delimiter.join(values[:-1])
-        if prefix:
+        # Build prefix from previous values if we have more than one value
+        prefix = ""
+        if len(values) > 1:
+            prefix = self.delimiter.join(values[:-1])
             prefix = f"{prefix}{self.delimiter}"
             if self.strip:
                 prefix = f"{prefix} "
 
-        for item in self.provider.get_completions(mod_context):
-            item.text = f"{prefix}{item.text}"
+        # Get completions and add prefix
+        async for item in self.provider.get_completions(mod_context):
+            item = copy(item)  # Don't modify original item
+            if prefix:
+                item.text = f"{prefix}{item.text}"
             yield item
 
 
@@ -267,10 +291,10 @@ class KeywordCompleter(CompletionProvider):
         self.keywords = keywords
         self.value_provider = value_provider
 
-    def get_completions(
+    async def get_completions(
         self,
         context: CompletionContext,
-    ) -> Iterator[CompletionItem]:
+    ) -> AsyncIterator[CompletionItem]:
         """Get keyword completions."""
         word = context.current_word
 
@@ -286,7 +310,8 @@ class KeywordCompleter(CompletionProvider):
         if self.value_provider and context.arg_position > 0:
             prev_arg = context.command_args[context.arg_position - 1]
             if prev_arg.startswith("--"):
-                yield from self.value_provider.get_completions(context)
+                async for item in self.value_provider.get_completions(context):
+                    yield item
 
 
 class ChainedCompleter(CompletionProvider):
@@ -300,13 +325,14 @@ class ChainedCompleter(CompletionProvider):
         """
         self.providers = providers
 
-    def get_completions(
+    async def get_completions(
         self,
         context: CompletionContext,
-    ) -> Iterator[CompletionItem]:
+    ) -> AsyncIterator[CompletionItem]:
         """Get completions from all providers."""
         for provider in self.providers:
-            yield from provider.get_completions(context)
+            async for item in provider.get_completions(context):
+                yield item
 
 
 class CallbackCompleter(CompletionProvider):
@@ -328,25 +354,33 @@ class CallbackCompleter(CompletionProvider):
 
     def __init__(
         self,
-        callback: Callable[[CompletionContext], Iterable[str | CompletionItem]],
+        callback: (
+            Callable[[CompletionContext], Iterable[str | CompletionItem]]
+            | Callable[[CompletionContext], Awaitable[Iterable[str | CompletionItem]]]
+        ),
         kind: CompletionKind | None = None,
     ):
-        """Initialize callback completer.
+        self._callback = callback
+        self._kind = kind
+        self._is_async = inspect.iscoroutinefunction(callback)
 
-        Args:
-            callback: Function that returns completions as strings or CompletionItems
-            kind: Optional kind to apply to string completions
-        """
-        self.callback = callback
-        self.kind = kind
-
-    def get_completions(
+    async def get_completions(
         self,
         context: CompletionContext,
-    ) -> Iterator[CompletionItem]:
-        """Get completions by calling the callback function."""
-        for item in self.callback(context):
-            if isinstance(item, str):
-                yield CompletionItem(text=item, kind=self.kind)  # pyright: ignore
+    ) -> AsyncIterator[CompletionItem]:
+        try:
+            result = self._callback(context)
+
+            # Narrow type and handle async/sync appropriately
+            if is_awaitable(result):
+                items = await result
             else:
-                yield item
+                items = cast(Iterable[str | CompletionItem], result)
+
+            for item in items:
+                if isinstance(item, str):
+                    yield CompletionItem(text=item, kind=self._kind)  # type: ignore
+                else:
+                    yield item
+        except Exception as e:  # noqa: BLE001
+            logger.debug("Completion callback error: %s", e)

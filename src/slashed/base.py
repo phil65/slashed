@@ -3,22 +3,26 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
+import inspect
 import shlex
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar, cast
 
 from slashed.completion import CompletionProvider
 from slashed.exceptions import CommandError
 
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable
-
     from slashed.store import CommandStore
 
 TData = TypeVar("TData")
 type ConditionPredicate = Callable[[], bool]
+type SyncCommandFunc = Callable[[CommandContext, list[str], dict[str, str]], None]
+type AsyncCommandFunc = Callable[
+    [CommandContext, list[str], dict[str, str]], Awaitable[None]
+]
+type CommandFunc = SyncCommandFunc | AsyncCommandFunc
 
 
 class OutputWriter(Protocol):
@@ -137,7 +141,8 @@ class Command(BaseCommand):
 
     def __init__(
         self,
-        execute_func: ExecuteFunc,
+        execute_func: CommandFunc,
+        *,
         name: str | None = None,
         description: str | None = None,
         category: str = "general",
@@ -166,6 +171,7 @@ class Command(BaseCommand):
         self._execute_func = execute_func
         self._completer = completer
         self._condition = condition
+        self._is_async = inspect.iscoroutinefunction(execute_func)
 
     def is_available(self) -> bool:
         """Check if command is available based on condition."""
@@ -180,7 +186,12 @@ class Command(BaseCommand):
         kwargs: dict[str, str] | None = None,
     ):
         """Execute the command using provided function."""
-        await self._execute_func(ctx, args or [], kwargs or {})
+        args = args or []
+        kwargs = kwargs or {}
+
+        result = self._execute_func(ctx, args, kwargs)
+        if inspect.isawaitable(result):
+            await cast(Awaitable[None], result)
 
     def get_completer(self) -> CompletionProvider | None:
         """Get completion provider."""

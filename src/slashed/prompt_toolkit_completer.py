@@ -14,7 +14,7 @@ from slashed.utils import get_first_line
 
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import AsyncIterator
 
     from prompt_toolkit.document import Document
 
@@ -54,11 +54,11 @@ class PromptToolkitCompleter[TContextData](Completer):
             data, output_writer, metadata
         )
 
-    def get_completions(
+    async def get_completions(
         self,
         document: Document,
         complete_event: Any,
-    ) -> Iterator[Completion]:
+    ) -> AsyncIterator[Completion]:
         """Get completions for the current context."""
         text = document.text.lstrip()
 
@@ -77,7 +77,7 @@ class PromptToolkitCompleter[TContextData](Completer):
                     completer := command.get_completer()
                 ):
                     current_word = completion_context.current_word
-                    for item in completer.get_completions(completion_context):
+                    async for item in completer.get_completions(completion_context):
                         if current_word and not item.text.startswith(current_word):
                             continue
                         start_pos = -len(current_word) if current_word else 0

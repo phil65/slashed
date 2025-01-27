@@ -12,7 +12,7 @@ from slashed.log import get_logger
 
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import AsyncIterator, Iterator
 
     from slashed.base import OutputWriter
     from slashed.store import CommandStore
@@ -358,10 +358,10 @@ class CommandRouter[TGlobalContext, TRouteContext]:
         )
         await self.commands.execute_command(parsed.command, ctx)
 
-    def get_completions(
+    async def get_completions(
         self,
         context: CompletionContext,
-    ) -> Iterator[CompletionItem]:
+    ) -> AsyncIterator[CompletionItem]:
         """Get completions including route prefixes."""
         word = context.current_word
         text = context._document.text
@@ -398,7 +398,10 @@ class CommandRouter[TGlobalContext, TRouteContext]:
                     # Use the command completer
                     if command := self.commands._commands.get(word):
                         if completer := command.get_completer():
-                            yield from completer.get_completions(route_completion_ctx)
+                            async for item in completer.get_completions(
+                                route_completion_ctx
+                            ):
+                                yield item
                     # Or suggest commands
                     else:
                         commands = self.commands.list_commands()
@@ -425,7 +428,10 @@ class CommandRouter[TGlobalContext, TRouteContext]:
                 # First try command completer if we have a word
                 if word and (command := self.commands._commands.get(word)):
                     if completer := command.get_completer():
-                        yield from completer.get_completions(global_completion_ctx)
+                        async for item in completer.get_completions(
+                            global_completion_ctx
+                        ):
+                            yield item
                 # Otherwise suggest commands
                 else:
                     for cmd in self.commands.list_commands():
