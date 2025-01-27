@@ -14,7 +14,7 @@ from slashed.utils import get_first_line
 
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterable, Iterable
+    from collections.abc import AsyncGenerator, Iterable
 
     from prompt_toolkit.document import Document
 
@@ -57,7 +57,7 @@ class PromptToolkitCompleter[TContextData](Completer):
 
     async def get_completions_async(
         self, document: Document, complete_event: Any
-    ) -> AsyncIterable[Completion]:
+    ) -> AsyncGenerator[Completion, None]:
         """Get completions for the current context."""
         text = document.text.lstrip()
 
