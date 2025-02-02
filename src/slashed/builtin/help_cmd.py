@@ -32,6 +32,7 @@ async def help_command(
 ):
     """Show available commands or detailed help for a specific command."""
     store = ctx.command_store
+    output_lines = []
 
     if args:  # Detail for specific command
         name = args[0]
@@ -49,19 +50,20 @@ async def help_command(
             if cmd.help_text:
                 sections.extend(["Help:", cmd.help_text])
 
-            await ctx.output.print("\n".join(sections))
+            output_lines.extend(sections)
         else:
-            await ctx.output.print(f"Unknown command: {name}")
-        return
+            output_lines.append(f"Unknown command: {name}")
+    else:
+        # List all commands grouped by category
+        categories = store.get_commands_by_category()
+        output_lines.append("\nAvailable commands:")
+        for category, commands in categories.items():
+            output_lines.extend([
+                f"\n{category.title()}:",
+                *[f"  /{cmd.name:<16} - {cmd.description}" for cmd in commands],
+            ])
 
-    # List all commands grouped by category
-    categories = store.get_commands_by_category()
-
-    await ctx.output.print("\nAvailable commands:")
-    for category, commands in categories.items():
-        await ctx.output.print(f"\n{category.title()}:")
-        for cmd in commands:
-            await ctx.output.print(f"  /{cmd.name:<16} - {cmd.description}")
+    await ctx.output.print("\n".join(output_lines))
 
 
 def create_help_completer() -> CompletionProvider:
