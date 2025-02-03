@@ -83,7 +83,8 @@ class CommandWidgetMixin[TContext]:
         self._dropdown.can_focus = False
         self._dropdown.display = False
         self.screen.mount(self._dropdown)
-        self.output_writer.bind("main", f"#{self._output_id}", default=True)
+        if self._output_id:
+            self.output_writer.bind("main", f"#{self._output_id}", default=True)
         if self._status_id:
             self.output_writer.bind("status", f"#{self._status_id}")
 
