@@ -14,11 +14,10 @@ from slashed.base import (
     Command,
     CommandContext,
     ExecuteFunc,
-    OutputWriter,
     parse_command,
 )
 from slashed.builtin import get_system_commands
-from slashed.completion import CompletionContext, CompletionProvider
+from slashed.completion import CompletionContext
 from slashed.context import ContextRegistry
 from slashed.events import CommandExecutedEvent
 from slashed.exceptions import CommandError
@@ -33,7 +32,7 @@ from slashed.output import (
 try:
     from upath import UPath as Path
 except ImportError:
-    from pathlib import Path
+    from pathlib import Path  # type: ignore[assignment]
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -42,7 +41,11 @@ if TYPE_CHECKING:
     from prompt_toolkit.document import Document
     from psygnal.containers._evented_dict import DictEvents
 
+    from slashed.base import (
+        OutputWriter,
+    )
     from slashed.commands import SlashedCommand
+    from slashed.completion import CompletionProvider
 
 
 TContextData = TypeVar("TContextData")

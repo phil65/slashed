@@ -4,14 +4,17 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from slashed.base import Command, CommandContext
+from slashed.base import Command
 from slashed.completers import CallbackCompleter
-from slashed.completion import CompletionContext, CompletionItem, CompletionProvider
+from slashed.completion import CompletionItem
 from slashed.exceptions import ExitCommandError
 
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+
+    from slashed.base import CommandContext
+    from slashed.completion import CompletionContext, CompletionProvider
 
 
 HELP_HELP = """\

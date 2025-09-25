@@ -1,11 +1,20 @@
-from dataclasses import dataclass
+from __future__ import annotations
 
-from textual.app import App, ComposeResult
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+from textual.app import App
 from textual.containers import Container, VerticalScroll
 from textual.widgets import Header, Label
 
-from slashed import ChoiceCompleter, CommandContext, CompletionProvider, SlashedCommand
+from slashed import ChoiceCompleter, SlashedCommand
 from slashed.textual_adapter import CommandTextArea
+
+
+if TYPE_CHECKING:
+    from textual.app import ComposeResult
+
+    from slashed import CommandContext, CompletionProvider
 
 
 @dataclass

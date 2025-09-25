@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 from prompt_toolkit.completion import Completer, Completion
 from typing_extensions import TypeVar
 
-from slashed import CommandContext, CompletionContext
+from slashed import CompletionContext
 from slashed.log import get_logger
 from slashed.store import CommandStore
 from slashed.utils import get_first_line
@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
     from prompt_toolkit.document import Document
 
+    from slashed import CommandContext
     from slashed.base import OutputWriter
 
 

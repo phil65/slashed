@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
 from copy import copy
 import inspect
 import os
@@ -12,7 +11,7 @@ from typing import TYPE_CHECKING, Any
 try:
     from upath import UPath as Path
 except ImportError:
-    from pathlib import Path
+    from pathlib import Path  # type: ignore[assignment]
 
 from collections.abc import Awaitable, Iterable
 from typing import TypeGuard, TypeVar, cast
@@ -27,6 +26,7 @@ type PathType = str | os.PathLike[str]
 
 if TYPE_CHECKING:
     from collections.abc import (
+        AsyncIterator,
         Awaitable,
         Callable,
         Sequence,

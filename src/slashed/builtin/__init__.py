@@ -1,6 +1,7 @@
 """Built-in commands for Slashed."""
 
-from slashed.base import BaseCommand
+from __future__ import annotations
+
 from slashed.builtin.help_cmd import help_cmd, exit_cmd
 from slashed.builtin.system import (
     ExecCommand,
@@ -10,6 +11,10 @@ from slashed.builtin.system import (
     KillCommand,
     EnvCommand,
 )
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from slashed.base import BaseCommand
 
 
 def get_builtin_commands() -> list[BaseCommand]:

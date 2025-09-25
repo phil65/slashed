@@ -8,7 +8,7 @@ from textual.app import App
 from textual.containers import Container, VerticalScroll
 from textual.widgets import Input, Label
 
-from slashed.base import BaseCommand, OutputWriter
+from slashed.base import OutputWriter
 from slashed.log import get_logger
 from slashed.output import SignalingOutputWriter
 from slashed.store import CommandStore
@@ -18,6 +18,7 @@ from slashed.textual_adapter.suggester import SlashedSuggester
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
+    from slashed.base import BaseCommand
     from slashed.commands import SlashedCommand
 
 logger = get_logger(__name__)

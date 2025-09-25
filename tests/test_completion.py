@@ -1,11 +1,16 @@
-from collections.abc import AsyncIterator
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock
 
 import pytest
 
 from slashed.completers import KeywordCompleter, MultiValueCompleter
 from slashed.completion import CompletionContext, CompletionItem, CompletionProvider
+
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
 
 
 class TestCompleter(CompletionProvider):

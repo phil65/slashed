@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, assert_type
 
 import pytest
 
-from slashed.base import BaseCommand, CommandContext
+from slashed.base import BaseCommand, CommandContext  # noqa: TC001
 from slashed.context import ContextRegistration, ContextRegistry
 
 

@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from slashed.base import CommandContext, OutputWriter
+from slashed.base import CommandContext, OutputWriter  # noqa: TC001
 from slashed.commands import SlashedCommand
 from slashed.completion import CompletionContext
 from slashed.exceptions import CommandError

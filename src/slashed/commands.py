@@ -4,10 +4,14 @@ from __future__ import annotations
 
 from abc import abstractmethod
 import inspect
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from slashed.base import BaseCommand, CommandContext
+from slashed.base import BaseCommand
 from slashed.exceptions import CommandError
+
+
+if TYPE_CHECKING:
+    from slashed.base import CommandContext
 
 
 class SlashedCommand(BaseCommand):
