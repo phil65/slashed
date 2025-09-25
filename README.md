@@ -2,8 +2,6 @@
 
 [![PyPI License](https://img.shields.io/pypi/l/slashed.svg)](https://pypi.org/project/slashed/)
 [![Package status](https://img.shields.io/pypi/status/slashed.svg)](https://pypi.org/project/slashed/)
-[![Daily downloads](https://img.shields.io/pypi/dd/slashed.svg)](https://pypi.org/project/slashed/)
-[![Weekly downloads](https://img.shields.io/pypi/dw/slashed.svg)](https://pypi.org/project/slashed/)
 [![Monthly downloads](https://img.shields.io/pypi/dm/slashed.svg)](https://pypi.org/project/slashed/)
 [![Distribution format](https://img.shields.io/pypi/format/slashed.svg)](https://pypi.org/project/slashed/)
 [![Wheel availability](https://img.shields.io/pypi/wheel/slashed.svg)](https://pypi.org/project/slashed/)
@@ -21,11 +19,8 @@
 [![Github last commit](https://img.shields.io/github/last-commit/phil65/slashed)](https://github.com/phil65/slashed/commits)
 [![Github release date](https://img.shields.io/github/release-date/phil65/slashed)](https://github.com/phil65/slashed/releases)
 [![Github language count](https://img.shields.io/github/languages/count/phil65/slashed)](https://github.com/phil65/slashed)
-[![Github commits this week](https://img.shields.io/github/commit-activity/w/phil65/slashed)](https://github.com/phil65/slashed)
 [![Github commits this month](https://img.shields.io/github/commit-activity/m/phil65/slashed)](https://github.com/phil65/slashed)
-[![Github commits this year](https://img.shields.io/github/commit-activity/y/phil65/slashed)](https://github.com/phil65/slashed)
 [![Package status](https://codecov.io/gh/phil65/slashed/branch/main/graph/badge.svg)](https://codecov.io/gh/phil65/slashed/)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![PyUp](https://pyup.io/repos/github/phil65/slashed/shield.svg)](https://pyup.io/repos/github/phil65/slashed/)
 
 [Read the documentation!](https://phil65.github.io/slashed/)
