@@ -106,7 +106,7 @@ async def test_required_args(context):
     cmd = FullCommand()
 
     # Missing required arg
-    with pytest.raises(CommandError, match="Missing required arguments: .*required_arg"):
+    with pytest.raises(CommandError, match=r"Missing required arguments: .*required_arg"):
         await cmd.execute(context, [], {})
 
     # With required arg
