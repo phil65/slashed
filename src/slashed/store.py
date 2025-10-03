@@ -48,7 +48,6 @@ if TYPE_CHECKING:
     from slashed.completion import CompletionProvider
 
 
-TContextData = TypeVar("TContextData")
 logger = get_logger(__name__)
 TCommandFunc = TypeVar("TCommandFunc", bound=ExecuteFunc)
 
@@ -151,7 +150,7 @@ class CommandStore:
         meta = metadata or {}
         return CommandContext(output=writer, data=data, command_store=self, metadata=meta)
 
-    def create_completion_context(
+    def create_completion_context[TContextData](
         self,
         document: Document,
         command_context: CommandContext[TContextData] | None = None,
@@ -311,7 +310,11 @@ class CommandStore:
             result.setdefault(cmd.category, []).append(cmd)
         return result
 
-    async def execute_command(self, command_str: str, ctx: CommandContext[TContextData]):
+    async def execute_command[TContextData](
+        self,
+        command_str: str,
+        ctx: CommandContext[TContextData],
+    ):
         """Execute a command from string input.
 
         Args:

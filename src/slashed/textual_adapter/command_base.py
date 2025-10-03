@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any
 
 from textual.message import Message
 
@@ -20,9 +20,6 @@ if TYPE_CHECKING:
 
     from textual.app import App
     from textual.screen import Screen
-
-
-TContext = TypeVar("TContext")
 
 
 class CommandWidgetMixin[TContext]:

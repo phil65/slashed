@@ -7,7 +7,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 import inspect
 import shlex
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Protocol, cast
 
 from slashed.completion import CompletionProvider
 from slashed.exceptions import CommandError
@@ -16,7 +16,6 @@ from slashed.exceptions import CommandError
 if TYPE_CHECKING:
     from slashed.store import CommandStore
 
-TData = TypeVar("TData")
 type ConditionPredicate = Callable[[], bool]
 type SyncCommandFunc = Callable[[CommandContext, list[str], dict[str, str]], None]
 type AsyncCommandFunc = Callable[

@@ -14,7 +14,7 @@ except ImportError:
     from pathlib import Path  # type: ignore[assignment]
 
 from collections.abc import Awaitable, Iterable
-from typing import TypeGuard, TypeVar, cast
+from typing import TypeGuard, cast
 
 from slashed import utils
 from slashed.completion import CompletionItem, CompletionProvider
@@ -36,10 +36,9 @@ if TYPE_CHECKING:
     from slashed.slashed_types import CompletionKind
 
 logger = get_logger(__name__)
-T = TypeVar("T")
 
 
-def is_awaitable(obj: Awaitable[T] | T) -> TypeGuard[Awaitable[T]]:
+def is_awaitable[T](obj: Awaitable[T] | T) -> TypeGuard[Awaitable[T]]:
     """Type guard to check if object is awaitable."""
     return inspect.isawaitable(obj)
 

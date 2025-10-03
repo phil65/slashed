@@ -7,7 +7,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
-    TypeVar,
     get_args,
     get_origin,
     get_type_hints,
@@ -26,7 +25,6 @@ if TYPE_CHECKING:
     from slashed.base import BaseCommand
 
 logger = get_logger(__name__)
-T = TypeVar("T")
 
 
 @dataclass

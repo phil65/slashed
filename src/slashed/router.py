@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any
 
 from slashed.completion import CompletionContext, CompletionItem
 from slashed.exceptions import CommandError
@@ -18,9 +18,6 @@ if TYPE_CHECKING:
     from slashed.store import CommandStore
 
 logger = get_logger(__name__)
-
-TGlobalContext = TypeVar("TGlobalContext")
-TRouteContext = TypeVar("TRouteContext")
 
 
 @dataclass
