@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from slashed.base import Command, CommandContext, parse_command
+from slashed.base import Command, CommandContext, parse_command  # noqa: TC001
 from slashed.exceptions import CommandError
 from slashed.store import CommandStore
 
