@@ -30,7 +30,6 @@ def mock_document():
     return doc
 
 
-@pytest.mark.asyncio
 async def test_basic_completer(mock_document):
     completer = TestCompleter()
     context = CompletionContext[Any](document=mock_document)
@@ -44,7 +43,6 @@ async def test_basic_completer(mock_document):
     assert items[1].text == "test2"
 
 
-@pytest.mark.asyncio
 async def test_multi_value_completer(mock_document):
     base_completer = TestCompleter()
     multi_completer = MultiValueCompleter(base_completer, delimiter=",")
@@ -76,7 +74,6 @@ async def test_multi_value_completer(mock_document):
     assert items[1].text == "value1, test2"
 
 
-@pytest.mark.asyncio
 async def test_keyword_completer(mock_document):
     keywords = {"param1": "First parameter", "param2": "Second parameter"}
     value_completer = TestCompleter()

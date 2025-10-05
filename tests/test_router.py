@@ -273,7 +273,6 @@ class TestCompletion:
         assert len(completions) == 1
         assert completions[0].text == "@db"
 
-    @pytest.mark.asyncio
     async def test_command_completion(self, router: CommandRouter):
         """Test completing commands with routing."""
         doc = MagicMock()

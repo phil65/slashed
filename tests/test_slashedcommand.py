@@ -100,7 +100,6 @@ def test_missing_name():
             """Invalid command without name."""
 
 
-@pytest.mark.asyncio
 async def test_required_args(context):
     """Test handling of required arguments."""
     cmd = FullCommand()
@@ -113,7 +112,6 @@ async def test_required_args(context):
     await cmd.execute(context, ["value"], {})
 
 
-@pytest.mark.asyncio
 async def test_optional_args(context):
     """Test handling of optional arguments."""
     cmd = FullCommand()
@@ -126,7 +124,6 @@ async def test_optional_args(context):
         await cmd.execute(context, ["req"], {"unknown": "value"})
 
 
-@pytest.mark.asyncio
 async def test_argument_binding(context):
     """Test that arguments are bound correctly."""
 
