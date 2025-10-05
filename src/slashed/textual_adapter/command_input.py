@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from textual.reactive import Reactive
 
 
-class CommandInput[TContext](Input, CommandWidgetMixin[TContext]):
+class CommandInput[TContext](Input, CommandWidgetMixin[TContext]):  # type: ignore[override]
     """Single-line command input with completion support.
 
     Type Parameters:

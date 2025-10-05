@@ -11,6 +11,8 @@ from slashed.log import get_logger
 if TYPE_CHECKING:
     from pathlib import Path
 
+    import upath
+
 
 type PathType = str | os.PathLike[str]
 
@@ -18,7 +20,7 @@ type PathType = str | os.PathLike[str]
 logger = get_logger(__name__)
 
 
-def get_file_kind(path: Path) -> str:
+def get_file_kind(path: Path | upath.UPath) -> str:
     """Get more specific file kind based on extension."""
     ext = path.suffix.lower()
     return {
@@ -40,7 +42,7 @@ def format_size(size: int) -> str:
     return f"{size:.1f} TB"
 
 
-def get_metadata(path: Path) -> str:
+def get_metadata(path: Path | upath.UPath) -> str:
     """Get metadata for path entry."""
     try:
         if path.is_dir():

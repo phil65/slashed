@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from textual.reactive import Reactive
 
 
-class CommandTextArea[TContext](TextArea, CommandWidgetMixin[TContext]):
+class CommandTextArea[TContext](TextArea, CommandWidgetMixin[TContext]):  # type: ignore[override]
     """Multi-line command input with completion support.
 
     Type Parameters:
