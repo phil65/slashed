@@ -1,6 +1,6 @@
 [project]
 name = "slashed"
-version = "0.11.5"
+version = "0.12.0"
 description = "Slash commands and autocompletions"
 readme = "README.md"
 requires-python = ">=3.12"
