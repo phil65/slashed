@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from importlib.metadata import version
+
+__version__ = version("slashed")
+
 from slashed.base import (
     BaseCommand,
     Command,
@@ -34,8 +38,6 @@ from slashed.output import (
 from slashed.store import CommandStore
 from slashed.registry import CommandRegistry
 
-
-__version__ = "0.11.5"
 
 __all__ = [  # noqa: RUF022
     # Core
@@ -74,4 +76,6 @@ __all__ = [  # noqa: RUF022
     "DefaultOutputWriter",
     # Exceptions
     "ExitCommandError",
+    # Version
+    "__version__",
 ]
