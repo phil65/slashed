@@ -8,15 +8,11 @@ import os
 import platform
 import subprocess
 import sys
-from typing import TYPE_CHECKING
 
+from slashed.base import CommandContext  # noqa: TC001
 from slashed.commands import SlashedCommand
 from slashed.completers import PathCompleter
 from slashed.exceptions import CommandError
-
-
-if TYPE_CHECKING:
-    from slashed.base import CommandContext
 
 
 class ExecCommand(SlashedCommand):
