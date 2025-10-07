@@ -96,7 +96,7 @@ class CommandStore:
         # Load history
         try:
             if self._history_path and self._history_path.exists():
-                self._command_history = self._history_path.read_text().splitlines()
+                self._command_history = self._history_path.read_text("utf-8").splitlines()
         except Exception:
             logger.exception("Failed to load command history")
             self._command_history = []
