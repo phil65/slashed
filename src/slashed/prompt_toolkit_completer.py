@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from prompt_toolkit.completion import Completer, Completion
-from typing_extensions import TypeVar
 
 from slashed import CompletionContext
 from slashed.log import get_logger
@@ -58,7 +57,7 @@ class PromptToolkitCompleter[TContextData](Completer):
 
     async def get_completions_async(
         self, document: Document, complete_event: Any
-    ) -> AsyncGenerator[Completion, None]:
+    ) -> AsyncGenerator[Completion]:
         """Get completions for the current context."""
         text = document.text.lstrip()
 

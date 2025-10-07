@@ -4,9 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
-
-from typing_extensions import TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from slashed.log import get_logger
 
