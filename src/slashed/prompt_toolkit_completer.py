@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any
 
 from prompt_toolkit.completion import Completer, Completion
 
@@ -21,11 +21,10 @@ if TYPE_CHECKING:
     from slashed.base import OutputWriter
 
 
-TContextData = TypeVar("TContextData", default=Any)
 logger = get_logger(__name__)
 
 
-class PromptToolkitCompleter[TContextData](Completer):
+class PromptToolkitCompleter[TContextData = Any](Completer):
     """Adapts our completion system to prompt-toolkit."""
 
     def __init__(
