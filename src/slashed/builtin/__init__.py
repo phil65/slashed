@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from slashed.builtin.help_cmd import help_cmd, exit_cmd
+from slashed.builtin.help_cmd import HelpCommand, ExitCommand
 from slashed.builtin.system import (
     ExecCommand,
     ProcessesCommand,
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 def get_builtin_commands() -> list[BaseCommand]:
     """Get list of built-in commands."""
-    return [help_cmd, exit_cmd]
+    return [HelpCommand(), ExitCommand()]
 
 
 def get_system_commands() -> list[BaseCommand]:
