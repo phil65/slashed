@@ -126,7 +126,7 @@ class PathCompleter(CompletionProvider):
                 # Get relative path if using base_path
                 if self.base_path:
                     try:
-                        display = str(entry.relative_to(self.base_path))
+                        display = str(entry.relative_to(self.base_path))  # pyright: ignore[reportArgumentType]
                     except ValueError:
                         display = str(entry)
                 else:
