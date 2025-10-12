@@ -187,17 +187,17 @@ class SystemInfoCommand(SlashedCommand):
         disk = psutil.disk_usage("/")
 
         info = [
-            f"System: {platform.system()} {platform.release()}",
-            f"Python: {sys.version.split()[0]}",
-            f"CPU Usage: {cpu_percent}%",
-            f"Memory: {memory.percent}% used "
+            f"**System:** {platform.system()} {platform.release()}",
+            f"**Python:** {sys.version.split()[0]}",
+            f"**CPU Usage:** {cpu_percent}%",
+            f"**Memory:** {memory.percent}% used "
             f"({memory.used // 1024 // 1024}MB of {memory.total // 1024 // 1024}MB)",
-            f"Disk: {disk.percent}% used "
+            f"**Disk:** {disk.percent}% used "
             f"({disk.used // 1024 // 1024 // 1024}GB of "
             f"{disk.total // 1024 // 1024 // 1024}GB)",
-            f"Network interfaces: {', '.join(psutil.net_if_addrs().keys())}",
+            f"**Network interfaces:** {', '.join(psutil.net_if_addrs().keys())}",
         ]
-        await ctx.output.print("\n".join(info))
+        await ctx.output.print("\n\n".join(info))
 
 
 class KillCommand(SlashedCommand):
@@ -254,9 +254,9 @@ class KillCommand(SlashedCommand):
                 continue
 
         if killed:
-            await ctx.output.print(f"Terminated {killed} process(es) named '{target}'")
+            await ctx.output.print(f"Terminated {killed} process(es) named {target!r}")
         else:
-            msg = f"No processes found with name '{target}'"
+            msg = f"No processes found with name {target!r}"
             raise CommandError(msg)
 
 

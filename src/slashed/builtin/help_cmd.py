@@ -40,32 +40,32 @@ async def help_command(
         name = args[0]
         if cmd := store.get_command(name):
             sections = [
-                f"Command: /{cmd.name}",
-                f"Category: {cmd.category}",
+                f"**Command:** /{cmd.name}",
+                f"**Category:** {cmd.category}",
                 "",
-                "Description:",
+                "**Description:**",
                 cmd.description,
                 "",
             ]
             if cmd.usage:
-                sections.extend(["Usage:", f"/{cmd.name} {cmd.usage}", ""])
+                sections.extend(["**Usage:**", f"/{cmd.name} {cmd.usage}", ""])
             if cmd.help_text:
-                sections.extend(["Help:", cmd.help_text])
+                sections.extend(["**Help:**", cmd.help_text])
 
             output_lines.extend(sections)
         else:
-            output_lines.append(f"Unknown command: {name}")
+            output_lines.append(f"**Unknown command:** {name}")
     else:
         # List all commands grouped by category
         categories = store.get_commands_by_category()
-        output_lines.append("\nAvailable commands:")
+        output_lines.append("\n**Available commands:**")
         for category, commands in categories.items():
             output_lines.extend([
                 f"\n{category.title()}:",
-                *[f"  /{cmd.name:<16} - {cmd.description}" for cmd in commands],
+                *[f"  /{cmd.name:<16} - *{cmd.description}*" for cmd in commands],
             ])
 
-    await ctx.output.print("\n".join(output_lines))
+    await ctx.output.print("\n\n".join(output_lines))
 
 
 def create_help_completer() -> CompletionProvider:
