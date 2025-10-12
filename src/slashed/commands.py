@@ -4,10 +4,14 @@ from __future__ import annotations
 
 from abc import abstractmethod
 import inspect
-from typing import Any, get_type_hints
+from typing import TYPE_CHECKING, Any, get_type_hints
 
 from slashed.base import BaseCommand, CommandContext
 from slashed.exceptions import CommandError
+
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class SlashedCommand(BaseCommand):
@@ -80,43 +84,8 @@ class SlashedCommand(BaseCommand):
 
         # Generate usage from execute signature if not set
         if cls.usage is None:
-            sig = inspect.signature(cls.execute_command)
-            params = list(sig.parameters.items())
-
-            # Skip self parameter
-            params = params[1:]
-
-            # Check if first parameter is a context
-            if params and cls._is_context_param(params[0][0], cls.execute_command):
-                # Skip context parameter
-                params = params[1:]
-
-            usage_params = []
-            for name, param in params:
-                if param.default == inspect.Parameter.empty:
-                    usage_params.append(f"<{name}>")
-                else:
-                    usage_params.append(f"[--{name} <value>]")
+            usage_params = extract_usage_params(cls.execute_command)
             cls.usage = " ".join(usage_params)
-
-    @staticmethod
-    def _is_context_param(param_name: str, method) -> bool:
-        """Determine if a parameter is likely a context parameter."""
-        try:
-            hints = get_type_hints(method)
-            if param_name in hints:
-                hint = hints[param_name]
-                # Check if type is CommandContext or a subclass/generic of it
-                origin = getattr(hint, "__origin__", hint)
-                if origin is CommandContext or (
-                    isinstance(origin, type) and issubclass(origin, CommandContext)
-                ):
-                    return True
-        except (TypeError, AttributeError):
-            # If we can't determine type hints, check by name
-            return param_name in ("ctx", "context")
-
-        return False
 
     @abstractmethod
     async def execute_command(
@@ -150,7 +119,7 @@ class SlashedCommand(BaseCommand):
 
         # Check if we need to pass context
         param_names = list(parameters.keys())
-        has_ctx = param_names and self._is_context_param(param_names[0], method)
+        has_ctx = param_names and _is_context_param(param_names[0], method)
 
         # Prepare parameters for matching, excluding context if present
         if has_ctx:
@@ -192,3 +161,44 @@ class SlashedCommand(BaseCommand):
 
         # Call with positional args first, then kwargs
         return await self.execute_command(*call_args, **kwargs)
+
+
+def extract_usage_params(func: Callable) -> list[str]:
+    """Extract usage parameters from a function's signature."""
+    sig = inspect.signature(func)
+    params = list(sig.parameters.items())
+
+    # Skip self parameter
+    params = params[1:]
+
+    # Check if first parameter is a context
+    if params and _is_context_param(params[0][0], func):
+        # Skip context parameter
+        params = params[1:]
+
+    usage_params = []
+    for name, param in params:
+        if param.default == inspect.Parameter.empty:
+            usage_params.append(f"<{name}>")
+        else:
+            usage_params.append(f"[--{name} <value>]")
+    return usage_params
+
+
+def _is_context_param(param_name: str, method) -> bool:
+    """Determine if a parameter is likely a context parameter."""
+    try:
+        hints = get_type_hints(method)
+        if param_name in hints:
+            hint = hints[param_name]
+            # Check if type is CommandContext or a subclass/generic of it
+            origin = getattr(hint, "__origin__", hint)
+            if origin is CommandContext or (
+                isinstance(origin, type) and issubclass(origin, CommandContext)
+            ):
+                return True
+    except (TypeError, AttributeError):
+        # If we can't determine type hints, check by name
+        return param_name in ("ctx", "context")
+
+    return False
