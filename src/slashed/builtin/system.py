@@ -31,20 +31,11 @@ class ExecCommand(SlashedCommand):
         """Get path completer for executables."""
         return PathCompleter(directories=True, files=True)
 
-    async def execute_command(
-        self,
-        ctx: CommandContext,
-        command: str,
-        *args: str,
-    ):
+    async def execute_command(self, ctx: CommandContext, command: str, *args: str):
         """Execute system command synchronously."""
         try:
-            result = subprocess.run(
-                [command, *args],
-                capture_output=True,
-                text=True,
-                check=True,
-            )
+            cmd = [command, *args]
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
             if result.stdout:
                 await ctx.output.print(result.stdout.rstrip())
             if result.stderr:
@@ -76,12 +67,7 @@ class RunCommand(SlashedCommand):
         """Get path completer for executables."""
         return PathCompleter(directories=True, files=True)
 
-    async def execute_command(
-        self,
-        ctx: CommandContext,
-        command: str,
-        *args: str,
-    ):
+    async def execute_command(self, ctx: CommandContext, command: str, *args: str):
         """Launch system command asynchronously."""
         try:
             process = await asyncio.create_subprocess_exec(
@@ -113,12 +99,7 @@ class ProcessesCommand(SlashedCommand):
     def is_available(self) -> bool:
         return find_spec("psutil") is not None
 
-    async def execute_command(
-        self,
-        ctx: CommandContext,
-        *,
-        filter_by: str | None = None,
-    ):
+    async def execute_command(self, ctx: CommandContext, *, filter_by: str | None = None):
         """List running processes."""
         import psutil
 
@@ -175,10 +156,7 @@ class SystemInfoCommand(SlashedCommand):
     def is_available(self) -> bool:
         return find_spec("psutil") is not None
 
-    async def execute_command(
-        self,
-        ctx: CommandContext,
-    ):
+    async def execute_command(self, ctx: CommandContext):
         """Show system information."""
         import psutil
 
@@ -220,11 +198,7 @@ class KillCommand(SlashedCommand):
     def is_available(self) -> bool:
         return find_spec("psutil") is not None
 
-    async def execute_command(
-        self,
-        ctx: CommandContext,
-        target: str,
-    ):
+    async def execute_command(self, ctx: CommandContext, target: str):
         """Kill a process by PID or name."""
         import psutil
 

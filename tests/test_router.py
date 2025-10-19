@@ -130,12 +130,9 @@ class TestBasicRouting:
     def test_add_route(self, router: CommandRouter):
         """Test adding routes."""
         # Adding duplicate route should fail
+        ctx = DbContext(connection="other", timeout=10)
         with pytest.raises(ValueError, match="Route 'db' already exists"):
-            router.add_route(
-                "db",
-                DbContext(connection="other", timeout=10),
-                "Other DB",
-            )
+            router.add_route("db", ctx, "Other DB")
 
     def test_list_routes(self, router: CommandRouter):
         """Test listing routes."""

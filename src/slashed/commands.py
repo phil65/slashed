@@ -110,10 +110,8 @@ class SlashedCommand(BaseCommand):
         kwargs: dict[str, str],
     ):
         """Execute command by binding command-line arguments to method parameters."""
-        # Get concrete method's signature
         method = type(self).execute_command
         sig = inspect.signature(method)
-
         # Get parameter information (skip self)
         parameters = dict(list(sig.parameters.items())[1:])
 

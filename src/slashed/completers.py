@@ -7,6 +7,8 @@ import inspect
 import os
 from typing import TYPE_CHECKING, Any
 
+from upath import UPath
+
 
 try:
     from upath import UPath as Path
@@ -32,6 +34,8 @@ if TYPE_CHECKING:
         Sequence,
     )
 
+    from upath.types import JoinablePathLike
+
     from slashed.completion import CompletionContext
     from slashed.slashed_types import CompletionKind
 
@@ -54,7 +58,7 @@ class PathCompleter(CompletionProvider):
         files: bool = True,
         show_hidden: bool = False,
         expanduser: bool = True,
-        base_path: str | os.PathLike[str] | None = None,
+        base_path: JoinablePathLike | None = None,
     ):
         """Initialize path completer.
 
@@ -71,7 +75,7 @@ class PathCompleter(CompletionProvider):
         self.files = files
         self.show_hidden = show_hidden
         self.expanduser = expanduser
-        self.base_path = Path(base_path).resolve() if base_path else None
+        self.base_path = UPath(base_path).resolve() if base_path else None
 
     async def get_completions(
         self,
@@ -82,11 +86,11 @@ class PathCompleter(CompletionProvider):
 
         try:
             # Handle absolute paths
-            if Path(word).is_absolute():
-                path = Path(word)
+            if UPath(word).is_absolute():
+                path = UPath(word)
             # Handle user paths
             elif self.expanduser and word.startswith("~"):
-                path = Path(word).expanduser()
+                path = UPath(word).expanduser()
             # Handle relative paths
             else:
                 # If base_path is set, resolve relative to it
