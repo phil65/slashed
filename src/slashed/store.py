@@ -22,11 +22,7 @@ from slashed.context import ContextRegistry
 from slashed.events import CommandExecutedEvent
 from slashed.exceptions import CommandError
 from slashed.log import get_logger
-from slashed.output import (
-    CallbackOutputWriter,
-    DefaultOutputWriter,
-    SignalingOutputWriter,
-)
+from slashed.output import CallbackOutputWriter, DefaultOutputWriter
 
 
 try:
@@ -144,9 +140,9 @@ class CommandStore:
             Command execution context
         """
         if callable(output_writer):
-            output_writer = CallbackOutputWriter(output_writer)
-        base_writer = output_writer or DefaultOutputWriter()
-        writer = SignalingOutputWriter(self.output, base_writer)
+            writer: OutputWriter = CallbackOutputWriter(output_writer)
+        else:
+            writer = output_writer or DefaultOutputWriter()
         meta = metadata or {}
         return CommandContext(output=writer, data=data, command_store=self, metadata=meta)
 
