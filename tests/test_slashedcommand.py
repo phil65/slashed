@@ -8,6 +8,7 @@ from slashed.base import CommandContext
 from slashed.commands import SlashedCommand
 from slashed.exceptions import CommandError
 from slashed.output import DefaultOutputWriter
+from slashed.store import CommandStore
 
 
 class SimpleCommand(SlashedCommand):
@@ -23,7 +24,7 @@ class SimpleCommand(SlashedCommand):
         optional_arg: str = "default",
     ):
         """Test implementation."""
-        await ctx.output.print(f"{required_arg} {optional_arg}")
+        await ctx.print(f"{required_arg} {optional_arg}")
 
 
 class FullCommand(SlashedCommand):
@@ -42,7 +43,7 @@ class FullCommand(SlashedCommand):
         optional_arg: str = "default",
     ):
         """Execute with both required and optional args."""
-        await ctx.output.print(f"{required_arg} {optional_arg}")
+        await ctx.print(f"{required_arg} {optional_arg}")
 
 
 class DocstringCommand(SlashedCommand):
@@ -56,14 +57,14 @@ class DocstringCommand(SlashedCommand):
         value: str,
     ):
         """Do something with value."""
-        await ctx.output.print(value)
+        await ctx.print(value)
 
 
 @pytest.fixture
 def context(tmp_path):
     """Create a command context for testing."""
     writer = DefaultOutputWriter()
-    return CommandContext(output=writer, data=None, command_store=None)  # type: ignore
+    return CommandContext(output=writer, data=None, command_store=CommandStore())
 
 
 def test_command_attributes():
@@ -194,7 +195,7 @@ def test_inheritance():
             value: str,
         ):
             """Base implementation."""
-            await ctx.output.print(value)
+            await ctx.print(value)
 
     class ChildCmd(BaseCmd):
         name = "child"
@@ -206,7 +207,7 @@ def test_inheritance():
             extra: str = "default",
         ):
             """Child implementation."""
-            await ctx.output.print(f"{value} {extra}")
+            await ctx.print(f"{value} {extra}")
 
     base = BaseCmd()
     child = ChildCmd()

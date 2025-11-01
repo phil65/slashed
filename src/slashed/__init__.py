@@ -43,7 +43,6 @@ from slashed.output import (
     QueueOutputWriter,
     CallbackOutputWriter,
     TransformOutputWriter,
-    SignalingOutputWriter,
 )
 from slashed.store import CommandStore
 from slashed.registry import CommandRegistry
@@ -69,7 +68,6 @@ __all__ = [  # noqa: RUF022
     "CallbackOutputWriter",
     "QueueOutputWriter",
     "TransformOutputWriter",
-    "SignalingOutputWriter",
     # Completion
     "CompletionContext",
     "CompletionItem",

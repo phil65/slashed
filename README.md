@@ -98,7 +98,7 @@ class GreetCommand(SlashedCommand):
         """
         state = ctx.get_data()  # Type-safe access to app state
         state.greeting_count += 1
-        await ctx.output.print(
+        await ctx.print(
             f"{greeting}, {name}! "
             f"(Greeted {state.greeting_count} times)"
         )
@@ -136,7 +136,7 @@ async def add_worker(ctx: CommandContext, args: list[str], kwargs: dict[str, str
     worker_id = args[0]
     host = kwargs.get("host", "localhost")
     port = kwargs.get("port", "8080")
-    await ctx.output.print(f"Adding worker {worker_id} at {host}:{port}")
+    await ctx.print(f"Adding worker {worker_id} at {host}:{port}")
 
 cmd = Command(
     name="add-worker",
@@ -180,7 +180,7 @@ class AddWorkerCommand(SlashedCommand):
             host: Worker hostname
             port: Worker port number
         """
-        await ctx.output.print(f"Adding worker {worker_id} at {host}:{port}")
+        await ctx.print(f"Adding worker {worker_id} at {host}:{port}")
 ```
 
 #### Advantages:
@@ -221,7 +221,7 @@ Use the **declarative style** when:
 )
 async def search(ctx: CommandContext, pattern: str, *, type: str = "any"):
     """Search for files in current directory."""
-    await ctx.output.print(f"Searching for {pattern}")
+    await ctx.print(f"Searching for {pattern}")
 ```
 
 #### Using add_command
@@ -262,7 +262,7 @@ registry = CommandRegistry()
 )
 async def search(ctx: CommandContext, pattern: str):
     """Search for files in current directory."""
-    await ctx.output.print(f"Searching for {pattern}")
+    await ctx.print(f"Searching for {pattern}")
 
 @registry.command(
     category="tools",
@@ -270,7 +270,7 @@ async def search(ctx: CommandContext, pattern: str):
 )
 async def query(ctx: CommandContext, sql: str):
     """Execute database query."""
-    await ctx.output.print(f"Running query: {sql}")
+    await ctx.print(f"Running query: {sql}")
 
 # app.py
 from slashed import CommandStore
@@ -304,9 +304,9 @@ async def admin_cmd(
     """Admin-only command."""
     state = ctx.get_data()  # Type-safe access to context data
     if not state.is_admin:
-        await ctx.output.print("Sorry, admin access required!")
+        await ctx.print("Sorry, admin access required!")
         return
-    await ctx.output.print(f"Welcome admin {state.user_name}!")
+    await ctx.print(f"Welcome admin {state.user_name}!")
 
 
 # Create and register the command
@@ -445,7 +445,7 @@ class QueryCommand(SlashedCommand):
         query: str,
     ):
         db = ctx.get_data()  # Properly typed as DatabaseContext
-        await ctx.output.print(f"Executing {query} with timeout {db.timeout}")
+        await ctx.print(f"Executing {query} with timeout {db.timeout}")
 
 # Register contexts and commands
 store = CommandStore()
@@ -482,7 +482,7 @@ class GreetCommand(SlashedCommand):
 
     async def execute_command(self, ctx: CommandContext[AppState], name: str = "World"):
         state = ctx.get_data()
-        await ctx.output.print(f"Hello, {name}! (from {state.user_name})")
+        await ctx.print(f"Hello, {name}! (from {state.user_name})")
 
     def get_completer(self) -> ChoiceCompleter:
         return ChoiceCompleter({"World": "Everyone", "Team": "The Team"})

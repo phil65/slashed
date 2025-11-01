@@ -79,7 +79,7 @@ class HelpCommand(SlashedCommand):
                     *[f"  /{cmd.name:<16} - *{cmd.description}*" for cmd in commands],
                 ])
 
-        await ctx.output.print("\n\n".join(output_lines))
+        await ctx.print("\n\n".join(output_lines))
 
 
 class ExitCommand(SlashedCommand):

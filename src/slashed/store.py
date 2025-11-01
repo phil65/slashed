@@ -37,9 +37,7 @@ if TYPE_CHECKING:
     from prompt_toolkit.document import Document
     from psygnal.containers._evented_dict import DictEvents
 
-    from slashed.base import (
-        OutputWriter,
-    )
+    from slashed.base import OutputWriter
     from slashed.commands import SlashedCommand
     from slashed.completion import CompletionProvider
 
@@ -356,7 +354,7 @@ class CommandStore:
                         ])
                     if command.help_text:
                         sections.extend(["Help:", command.help_text])
-                    await ctx.output.print("\n".join(sections))
+                    await ctx.print("\n".join(sections))
                     return
 
             msg = "Executing command: %s (args=%s, kwargs=%s)"
@@ -510,7 +508,7 @@ class CommandStore:
             @store.command(category="tools")
             async def hello(ctx: CommandContext, name: str = "World"):
                 '''Say hello to someone.'''
-                await ctx.output.print(f"Hello {name}!")
+                await ctx.print(f"Hello {name}!")
             ```
         """
 

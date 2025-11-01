@@ -58,7 +58,7 @@ class _TestCommand(SlashedCommand):
 
     async def execute_command(self, ctx: CommandContext[GlobalContext | DbContext]):
         """Execute test command."""
-        await ctx.output.print("Test command executed")
+        await ctx.print("Test command executed")
 
 
 class DbCommand(SlashedCommand):
@@ -71,7 +71,7 @@ class DbCommand(SlashedCommand):
         """Execute database query."""
         # Remove quotes from query to match assertion
         query = query.strip("'")
-        await ctx.output.print(f"Query executed: {query}")
+        await ctx.print(f"Query executed: {query}")
 
 
 class FsCommand(SlashedCommand):
@@ -82,7 +82,7 @@ class FsCommand(SlashedCommand):
 
     async def execute_command(self, ctx: CommandContext[FsContext], path: str = "."):
         """Execute filesystem listing."""
-        await ctx.output.print(f"Listing {path} in {ctx.get_data().mode} mode")
+        await ctx.print(f"Listing {path} in {ctx.get_data().mode} mode")
 
 
 @pytest.fixture

@@ -37,9 +37,9 @@ class ExecCommand(SlashedCommand):
             cmd = [command, *args]
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
             if result.stdout:
-                await ctx.output.print(result.stdout.rstrip())
+                await ctx.print(result.stdout.rstrip())
             if result.stderr:
-                await ctx.output.print(f"stderr: {result.stderr.rstrip()}")
+                await ctx.print(f"stderr: {result.stderr.rstrip()}")
 
         except subprocess.CalledProcessError as e:
             msg = f"Command failed with exit code {e.returncode}"
@@ -76,7 +76,7 @@ class RunCommand(SlashedCommand):
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
-            await ctx.output.print(f"Started process {process.pid}")
+            await ctx.print(f"Started process {process.pid}")
 
         except FileNotFoundError as e:
             msg = f"Command not found: {command}"
@@ -113,19 +113,19 @@ class ProcessesCommand(SlashedCommand):
                 continue
 
         if not processes:
-            await ctx.output.print("No matching processes found")
+            await ctx.print("No matching processes found")
             return
 
         # Sort by memory usage
         processes.sort(key=lambda x: x["memory_percent"], reverse=True)
 
         # Print header
-        await ctx.output.print("\nPID      MEM%   STATUS    NAME")
-        await ctx.output.print("-" * 50)
+        await ctx.print("\nPID      MEM%   STATUS    NAME")
+        await ctx.print("-" * 50)
 
         # Print processes
         for proc in processes[:20]:  # Limit to top 20
-            await ctx.output.print(
+            await ctx.print(
                 f"{proc['pid']:<8} "
                 f"{proc['memory_percent']:>5.1f}  "
                 f"{proc['status']:<9} "
@@ -175,7 +175,7 @@ class SystemInfoCommand(SlashedCommand):
             f"{disk.total // 1024 // 1024 // 1024}GB)",
             f"**Network interfaces:** {', '.join(psutil.net_if_addrs().keys())}",
         ]
-        await ctx.output.print("\n\n".join(info))
+        await ctx.print("\n\n".join(info))
 
 
 class KillCommand(SlashedCommand):
@@ -208,7 +208,7 @@ class KillCommand(SlashedCommand):
                 pid = int(target)
                 process = psutil.Process(pid)
                 process.terminate()
-                await ctx.output.print(f"Process {pid} terminated")
+                await ctx.print(f"Process {pid} terminated")
                 return
         except psutil.NoSuchProcess as e:
             msg = f"No process with PID {target}"
@@ -228,7 +228,7 @@ class KillCommand(SlashedCommand):
                 continue
 
         if killed:
-            await ctx.output.print(f"Terminated {killed} process(es) named {target!r}")
+            await ctx.print(f"Terminated {killed} process(es) named {target!r}")
         else:
             msg = f"No processes found with name {target!r}"
             raise CommandError(msg)
@@ -258,14 +258,14 @@ class EnvCommand(SlashedCommand):
         if name is None:
             # Show all variables
             for key, val in sorted(os.environ.items()):
-                await ctx.output.print(f"{key}={val}")
+                await ctx.print(f"{key}={val}")
         elif value is None:
             # Show specific variable
             if name in os.environ:
-                await ctx.output.print(f"{name}={os.environ[name]}")
+                await ctx.print(f"{name}={os.environ[name]}")
             else:
-                await ctx.output.print(f"Variable {name} not set")
+                await ctx.print(f"Variable {name} not set")
         else:
             # Set variable
             os.environ[name] = value
-            await ctx.output.print(f"Set {name}={value}")
+            await ctx.print(f"Set {name}={value}")

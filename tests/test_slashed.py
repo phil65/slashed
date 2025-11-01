@@ -44,7 +44,7 @@ async def test_command_signals(store: CommandStore, context: CommandContext):
     store.command_executed.connect(executed_events.append)
 
     async def hello(ctx: CommandContext, args: list[str], kwargs: dict[str, str]):
-        await ctx.output.print("Hello, World!")
+        await ctx.print("Hello, World!")
 
     cmd = Command(name="hello", description="Test command", execute_func=hello)
     store.register_command(cmd)
@@ -169,5 +169,5 @@ async def test_context_creation(store: CommandStore):
     output_received: list[str] = []
     store.output.connect(output_received.append)
 
-    await ctx.output.print("test message")
+    await ctx.print("test message")
     assert output_received == ["test message"]

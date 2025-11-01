@@ -33,7 +33,7 @@ class SlashedCommand(BaseCommand):
                 host: str,            # required param (no default)
                 port: int = 8080,     # optional param (has default)
             ):
-                await ctx.output.print(f"Adding worker {worker_id} at {host}:{port}")
+                await ctx.print(f"Adding worker {worker_id} at {host}:{port}")
 
         # Context-free command
         class VersionCommand(SlashedCommand):

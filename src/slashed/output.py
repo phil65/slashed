@@ -13,7 +13,6 @@ if TYPE_CHECKING:
     import asyncio
     from collections.abc import Awaitable, Callable
 
-    from psygnal import SignalInstance
     from rich.console import Console
 
 
@@ -128,20 +127,3 @@ class TransformOutputWriter(OutputWriter):
         """Transform and write message."""
         transformed = await self._transform(message, *self._args, **self._kwargs)
         await self._base_writer.print(transformed)
-
-
-class SignalingOutputWriter(OutputWriter):
-    """Output writer that emits to a signal and chains to another writer."""
-
-    def __init__(
-        self, output_signal: SignalInstance, base_writer: OutputWriter | None = None
-    ) -> None:
-        self._output_signal = output_signal
-        self._base_writer = base_writer or DefaultOutputWriter()
-
-    async def print(self, message: str) -> None:
-        self._output_signal.emit(message)
-        await self._base_writer.print(message)
-
-    def __getattr__(self, name: str) -> Any:
-        return getattr(self._base_writer, name)

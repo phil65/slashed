@@ -43,7 +43,7 @@ class GreetCommand(SlashedCommand):
     async def execute_command(self, ctx: CommandContext[AppState], name: str = "World"):
         """Greet someone."""
         state = ctx.get_data()  # Type-safe access to AppState
-        await ctx.output.print(f"Hello, {name}! (from {state.user_name})")
+        await ctx.print(f"Hello, {name}! (from {state.user_name})")
 
     def get_completer(self) -> ChoiceCompleter:
         """Provide name suggestions."""
@@ -101,7 +101,7 @@ class DemoApp(SlashedApp[AppState, None]):
         state = self.context.get_data()
         state.command_count += 1
         msg = f"[{state.user_name}] Echo: {value} (command #{state.command_count})"
-        await self.context.output.print(msg)
+        await self.context.print(msg)
 
 
 if __name__ == "__main__":

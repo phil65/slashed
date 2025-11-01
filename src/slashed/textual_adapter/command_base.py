@@ -100,10 +100,10 @@ class CommandWidgetMixin[TContext]:
             self.app.exit(str(e))
         except CommandError as e:
             # Regular command error - just show message
-            await self.context.output.print(f"Error: {e}")
+            await self.context.print(f"Error: {e}")
         except Exception as e:  # noqa: BLE001
             # Unexpected error
-            await self.context.output.print(f"Unexpected error: {e}")
+            await self.context.print(f"Unexpected error: {e}")
 
     def _create_command_task(self, command: str) -> None:
         """Create and store a command execution task."""

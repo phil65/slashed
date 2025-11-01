@@ -10,7 +10,6 @@ from textual.widgets import Input, Label
 
 from slashed.base import OutputWriter
 from slashed.log import get_logger
-from slashed.output import SignalingOutputWriter
 from slashed.store import CommandStore
 from slashed.textual_adapter.suggester import SlashedSuggester
 
@@ -113,7 +112,7 @@ class SlashedApp[TContext, TResult](App[TResult]):  # type: ignore[type-var]
             async def handle_input(self, value: str) -> None:
                 state = self.context.get_data()
                 state.count += 1
-                await self.context.output.print(f"Count: {state.count}")
+                await self.context.print(f"Count: {state.count}")
         ```
     """
 
@@ -161,7 +160,7 @@ class SlashedApp[TContext, TResult](App[TResult]):  # type: ignore[type-var]
             default: Whether this is the default output
         """
         writer = self.context.output
-        if not isinstance(writer, TextualOutputWriter | SignalingOutputWriter):
+        if not isinstance(writer, TextualOutputWriter):
             msg = "Output writer is not a TextualOutputWriter"
             raise TypeError(msg)
         writer.bind(output_id, widget_query, default=default)
@@ -183,7 +182,7 @@ class SlashedApp[TContext, TResult](App[TResult]):  # type: ignore[type-var]
             @command_input("my-input")
             async def handle_my_input(self, value: str) -> None:
                 # Handle non-command text input here
-                await self.context.output.print(f"Echo: {value}")
+                await self.context.print(f"Echo: {value}")
             ```
         """
 

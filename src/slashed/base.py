@@ -46,6 +46,11 @@ class CommandContext[TData]:
     command_store: CommandStore
     metadata: dict[str, Any] = field(default_factory=dict)
 
+    async def print(self, message: str):
+        """Write a message to output."""
+        self.command_store.output.emit(message)
+        await self.output.print(message)
+
     def get_data(self) -> TData:
         """deprecated: Use context instead."""
         return self.context
