@@ -111,54 +111,77 @@ class SlashedCommand(BaseCommand):
     ):
         """Execute command by binding command-line arguments to method parameters."""
         method = type(self).execute_command
-        sig = inspect.signature(method)
-        # Get parameter information (skip self)
-        parameters = dict(list(sig.parameters.items())[1:])
-
-        # Check if we need to pass context
-        param_names = list(parameters.keys())
-        has_ctx = param_names and _is_context_param(param_names[0], method)
-
-        # Prepare parameters for matching, excluding context if present
-        if has_ctx:
-            ctx_param_name = param_names[0]
-            parameters_for_matching = {
-                k: v for k, v in parameters.items() if k != ctx_param_name
-            }
-            call_args: list[str | CommandContext] = [ctx]  # Add context as first argument
-        else:
-            parameters_for_matching = parameters
-            call_args = []  # No context parameter
-
-        # Get required parameters in order (excluding context if applicable)
-        required = [
-            name
-            for name, param in parameters_for_matching.items()
-            if param.default == inspect.Parameter.empty
-        ]
-
-        # Check if required args are provided either as positional or keyword
-        missing = [
-            name
-            for idx, name in enumerate(required)
-            if name not in kwargs and len(args) < idx + 1
-        ]
-
-        if missing:
-            msg = f"Missing required arguments: {missing}"
-            raise CommandError(msg)
-
-        # Validate keyword arguments
-        for name in kwargs:
-            if name not in parameters_for_matching:
-                msg = f"Unknown argument: {name}"
-                raise CommandError(msg)
-
-        # Add positional arguments
-        call_args.extend(args)
-
+        call_args = parse_method(method, ctx, args, kwargs)
         # Call with positional args first, then kwargs
         return await self.execute_command(*call_args, **kwargs)
+
+
+def parse_method(
+    method: Callable,
+    ctx: CommandContext,
+    args: list[str],
+    kwargs: dict[str, str],
+) -> list[str | CommandContext]:
+    """Parse method parameters and return a list of positional arguments."""
+    sig = inspect.signature(method)
+    # Get parameter information (skip self)
+    parameters = dict(list(sig.parameters.items())[1:])
+
+    # Check if we need to pass context
+    param_names = list(parameters.keys())
+    has_ctx = param_names and _is_context_param(param_names[0], method)
+
+    # Prepare parameters for matching, excluding context if present
+    if has_ctx:
+        ctx_param_name = param_names[0]
+        parameters_for_matching = {
+            k: v for k, v in parameters.items() if k != ctx_param_name
+        }
+        call_args: list[str | CommandContext] = [ctx]  # Add context as first argument
+    else:
+        parameters_for_matching = parameters
+        call_args = []  # No context parameter
+
+    # Get required and optional parameters in order (excluding context if applicable)
+    param_list = list(parameters_for_matching.items())
+    required = [
+        name for name, param in param_list if param.default == inspect.Parameter.empty
+    ]
+
+    # Check for too many positional arguments
+    max_positional = len(param_list)
+    if len(args) > max_positional:
+        param_names = [name for name, _ in param_list]
+        msg = f"Too many positional arguments. Expected at most {max_positional} ({param_names}), got {len(args)}"  # noqa: E501
+        raise CommandError(msg)
+
+    # Check for conflicts between positional and keyword arguments
+    positional_param_names = [name for name, _ in param_list[: len(args)]]
+    conflicts = set(positional_param_names) & set(kwargs.keys())
+    if conflicts:
+        msg = f"Arguments provided both positionally and as keywords: {list(conflicts)}"
+        raise CommandError(msg)
+
+    # Check if required args are provided either as positional or keyword
+    missing = [
+        name
+        for idx, name in enumerate(required)
+        if name not in kwargs and len(args) < idx + 1
+    ]
+
+    if missing:
+        msg = f"Missing required arguments: {missing}"
+        raise CommandError(msg)
+
+    # Validate keyword arguments exist in signature
+    for name in kwargs:
+        if name not in parameters_for_matching:
+            msg = f"Unknown argument: {name}"
+            raise CommandError(msg)
+
+    # Add positional arguments
+    call_args.extend(args)
+    return call_args
 
 
 def extract_usage_params(func: Callable) -> list[str]:
