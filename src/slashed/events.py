@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 
 if TYPE_CHECKING:
@@ -33,3 +34,11 @@ class CommandExecutedEvent[TData]:
     context: CommandContext[TData]
     success: bool
     error: Exception | None = None
+
+
+CommandStoreEvent = (
+    CommandRegisteredEvent | CommandUnregisteredEvent | CommandExecutedEvent
+)
+
+
+CommandStoreEventHandler = Callable[[CommandStoreEvent], Any | Awaitable[Any]]
