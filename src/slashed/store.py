@@ -36,6 +36,7 @@ if TYPE_CHECKING:
     from slashed.base import OutputWriter
     from slashed.commands import SlashedCommand
     from slashed.completion import CompletionProvider
+    from slashed.events import CommandStoreEventHandler
 
 
 logger = get_logger(__name__)
@@ -52,17 +53,20 @@ class CommandStore:
         self,
         history_file: str | os.PathLike[str] | None = None,
         *,
+        event_handler: CommandStoreEventHandler | None = None,
         enable_system_commands: bool = False,
     ):
         """Initialize command store.
 
         Args:
             history_file: Optional path to history file
+            event_handler: Optional event handler for command execution events
             enable_system_commands: Whether to enable system execution commands.
                                   Disabled by default for security.
         """
         self._commands = EventedDict[str, BaseCommand]()
         self._contexts = ContextRegistry()
+        self.event_handler = event_handler
         self._command_history: list[str] = []
         self._history_path = UPath(history_file) if history_file else None
         self._enable_system_commands = enable_system_commands
@@ -366,14 +370,15 @@ class CommandStore:
             raise
         except Exception as e:
             msg = f"Command execution failed: {e}"
-            self.command_executed.emit(
-                CommandExecutedEvent(
-                    command=command_str,
-                    context=ctx,
-                    success=False,
-                    error=e,
-                )
+            event = CommandExecutedEvent(
+                command=command_str,
+                context=ctx,
+                success=False,
+                error=e,
             )
+            if self.event_handler:
+                await self.event_handler(event)
+            self.command_executed.emit(event)
             raise CommandError(msg) from e
 
     async def execute_command_with_context[T](
