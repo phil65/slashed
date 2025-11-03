@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 from psygnal import Signal
 from psygnal.containers import EventedDict
+from upath import UPath
 
 from slashed.base import (
     BaseCommand,
@@ -24,11 +25,6 @@ from slashed.exceptions import CommandError
 from slashed.log import get_logger
 from slashed.output import CallbackOutputWriter, DefaultOutputWriter
 
-
-try:
-    from upath import UPath as Path
-except ImportError:
-    from pathlib import Path  # type: ignore[assignment]
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -68,7 +64,7 @@ class CommandStore:
         self._commands = EventedDict[str, BaseCommand]()
         self._contexts = ContextRegistry()
         self._command_history: list[str] = []
-        self._history_path = Path(history_file) if history_file else None
+        self._history_path = UPath(history_file) if history_file else None
         self._enable_system_commands = enable_system_commands
         self._initialized = False
         if self._history_path:

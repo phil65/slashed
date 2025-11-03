@@ -2,21 +2,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Iterable
 from copy import copy
 import inspect
 import os
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeGuard, cast
 
 from upath import UPath
-
-
-try:
-    from upath import UPath as Path
-except ImportError:
-    from pathlib import Path  # type: ignore[assignment]
-
-from collections.abc import Awaitable, Iterable
-from typing import TypeGuard, cast
 
 from slashed import utils
 from slashed.completion import CompletionItem, CompletionProvider
@@ -94,7 +86,7 @@ class PathCompleter(CompletionProvider):
             # Handle relative paths
             else:
                 # If base_path is set, resolve relative to it
-                base = self.base_path or Path.cwd()
+                base = self.base_path or UPath.cwd()
                 path = (base / word).resolve()
 
             # If path doesn't exist, use its parent for listing
