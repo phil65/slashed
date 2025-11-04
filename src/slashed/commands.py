@@ -206,11 +206,10 @@ def extract_usage_params(func: Callable) -> list[str]:
     return usage_params
 
 
-def _is_context_param(param_name: str, method) -> bool:
+def _is_context_param(param_name: str, method: Callable[..., Any]) -> bool:
     """Determine if a parameter is likely a context parameter."""
     try:
-        hints = get_type_hints(method)
-        if param_name in hints:
+        if param_name in (hints := get_type_hints(method)):
             hint = hints[param_name]
             # Check if type is CommandContext or a subclass/generic of it
             origin = getattr(hint, "__origin__", hint)
