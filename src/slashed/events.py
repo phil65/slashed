@@ -36,8 +36,19 @@ class CommandExecutedEvent[TData]:
     error: Exception | None = None
 
 
+@dataclass
+class CommandOutputEvent[TData]:
+    """Event emitted when a command is executed."""
+
+    output: str
+    context: CommandContext[TData]
+
+
 CommandStoreEvent = (
-    CommandRegisteredEvent | CommandUnregisteredEvent | CommandExecutedEvent
+    CommandRegisteredEvent
+    | CommandUnregisteredEvent
+    | CommandExecutedEvent
+    | CommandOutputEvent
 )
 
 

@@ -10,6 +10,7 @@ import shlex
 from typing import TYPE_CHECKING, Any, Protocol, cast
 
 from slashed.completion import CompletionProvider
+from slashed.events import CommandOutputEvent
 from slashed.exceptions import CommandError
 
 
@@ -49,6 +50,9 @@ class CommandContext[TData]:
     async def print(self, message: str):
         """Write a message to output."""
         self.command_store.output.emit(message)
+        if self.command_store.event_handler:
+            event = CommandOutputEvent(context=self, output=message)
+            await self.command_store.event_handler(event)
         await self.output.print(message)
 
     def get_data(self) -> TData:

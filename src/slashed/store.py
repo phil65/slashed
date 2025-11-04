@@ -361,11 +361,10 @@ class CommandStore:
             logger.debug(msg, parsed.name, parsed.args.args, parsed.args.kwargs)
             # Execute it with all args, letting command handle help if it wants to
             await command.execute(ctx, parsed.args.args, parsed.args.kwargs)
-            self.command_executed.emit(
-                CommandExecutedEvent(
-                    command=command_str, context=ctx, success=True, error=None
-                )
-            )
+            event = CommandExecutedEvent(command=command_str, context=ctx, success=True)
+            if self.event_handler:
+                await self.event_handler(event)
+            self.command_executed.emit(event)
         except CommandError:
             raise
         except Exception as e:
