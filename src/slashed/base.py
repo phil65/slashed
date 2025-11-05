@@ -257,3 +257,41 @@ def parse_command(cmd_str: str) -> ParsedCommand:
             i += 1
     args_obj = ParsedCommandArgs(args=args, kwargs=kwargs)
     return ParsedCommand(name=name, args=args_obj)
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    from slashed import CommandStore, SlashedCommand
+
+    async def command_example():
+        async def test(ctx: CommandContext, args, kwargs):
+            print(f"Testing with {args} and {kwargs}")
+
+        cmd = Command(test, name="test_fn")
+        store = CommandStore()
+        store.register_command(cmd)
+        result = await store.execute_command_with_context(
+            "test_fn --a 1 --b 2", output_writer=print
+        )
+        print(result)
+
+    async def slashedcommand_example():
+        def test(ctx: CommandContext, a: str, b: str):
+            print(f"Testing with {a} and {b}")
+
+        class TestCommand(SlashedCommand):
+            name = "test_fn"
+
+            def execute_command(self, ctx: CommandContext[None], a: str, b: str):
+                print(f"Testing with {a} and {b}")
+
+        store = CommandStore()
+        store.register_command(TestCommand)
+        result = await store.execute_command_with_context(
+            "test_fn --a 1 --b 2",
+            output_writer=print,
+        )
+        print(result)
+
+    asyncio.run(slashedcommand_example())
