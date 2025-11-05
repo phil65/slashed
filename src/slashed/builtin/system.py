@@ -37,9 +37,9 @@ class ExecCommand(SlashedCommand):
             cmd = [command, *args]
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
             if result.stdout:
-                await ctx.print(result.stdout.rstrip())
+                await ctx.print(f"```\n{result.stdout.rstrip()}\n```")
             if result.stderr:
-                await ctx.print(f"stderr: {result.stderr.rstrip()}")
+                await ctx.print(f"**stderr:**\n```\n{result.stderr.rstrip()}\n```")
 
         except subprocess.CalledProcessError as e:
             msg = f"Command failed with exit code {e.returncode}"
@@ -76,7 +76,7 @@ class RunCommand(SlashedCommand):
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
-            await ctx.print(f"Started process {process.pid}")
+            await ctx.print(f"✅ Started process **{process.pid}**")
 
         except FileNotFoundError as e:
             msg = f"Command not found: {command}"
@@ -113,24 +113,27 @@ class ProcessesCommand(SlashedCommand):
                 continue
 
         if not processes:
-            await ctx.print("No matching processes found")
+            await ctx.print("❌ No matching processes found")
             return
 
         # Sort by memory usage
         processes.sort(key=lambda x: x["memory_percent"], reverse=True)
 
-        # Print header
-        await ctx.print("\nPID      MEM%   STATUS    NAME")
-        await ctx.print("-" * 50)
+        # Format as markdown table
+        lines = [
+            "## Running Processes",
+            "",
+            "| PID | MEM% | STATUS | NAME |",
+            "|-----|------|--------|------|",
+        ]
 
-        # Print processes
-        for proc in processes[:20]:  # Limit to top 20
-            await ctx.print(
-                f"{proc['pid']:<8} "
-                f"{proc['memory_percent']:>5.1f}  "
-                f"{proc['status']:<9} "
-                f"{proc['name']}"
+        # Add processes (limit to top 20)
+        for proc in processes[:20]:
+            lines.append(  # noqa: PERF401
+                f"| {proc['pid']} | {proc['memory_percent']:.1f}% | {proc['status']} | {proc['name']} |"  # noqa: E501
             )
+
+        await ctx.print("\n".join(lines))
 
 
 class SystemInfoCommand(SlashedCommand):
@@ -165,6 +168,8 @@ class SystemInfoCommand(SlashedCommand):
         disk = psutil.disk_usage("/")
 
         info = [
+            "## System Information",
+            "",
             f"**System:** {platform.system()} {platform.release()}",
             f"**Python:** {sys.version.split()[0]}",
             f"**CPU Usage:** {cpu_percent}%",
@@ -173,9 +178,9 @@ class SystemInfoCommand(SlashedCommand):
             f"**Disk:** {disk.percent}% used "
             f"({disk.used // 1024 // 1024 // 1024}GB of "
             f"{disk.total // 1024 // 1024 // 1024}GB)",
-            f"**Network interfaces:** {', '.join(psutil.net_if_addrs().keys())}",
+            f"**Network interfaces:** `{', '.join(psutil.net_if_addrs().keys())}`",
         ]
-        await ctx.print("\n\n".join(info))
+        await ctx.print("\n".join(info))
 
 
 class KillCommand(SlashedCommand):
@@ -208,7 +213,7 @@ class KillCommand(SlashedCommand):
                 pid = int(target)
                 process = psutil.Process(pid)
                 process.terminate()
-                await ctx.print(f"Process {pid} terminated")
+                await ctx.print(f"✅ Process **{pid}** terminated")
                 return
         except psutil.NoSuchProcess as e:
             msg = f"No process with PID {target}"
@@ -228,7 +233,7 @@ class KillCommand(SlashedCommand):
                 continue
 
         if killed:
-            await ctx.print(f"Terminated {killed} process(es) named {target!r}")
+            await ctx.print(f"✅ Terminated **{killed}** process(es) named `{target}`")
         else:
             msg = f"No processes found with name {target!r}"
             raise CommandError(msg)
@@ -256,16 +261,25 @@ class EnvCommand(SlashedCommand):
     ):
         """Manage environment variables."""
         if name is None:
-            # Show all variables
+            # Show all variables as markdown table
+            lines = [
+                "## Environment Variables",
+                "",
+                "| Variable | Value |",
+                "|----------|-------|",
+            ]
             for key, val in sorted(os.environ.items()):
-                await ctx.print(f"{key}={val}")
+                # Truncate long values for readability
+                display_val = val if len(val) <= 50 else f"{val[:47]}..."  # noqa: PLR2004
+                lines.append(f"| `{key}` | `{display_val}` |")
+            await ctx.print("\n".join(lines))
         elif value is None:
             # Show specific variable
             if name in os.environ:
-                await ctx.print(f"{name}={os.environ[name]}")
+                await ctx.print(f"**{name}:** `{os.environ[name]}`")
             else:
-                await ctx.print(f"Variable {name} not set")
+                await ctx.print(f"❌ Variable `{name}` not set")
         else:
             # Set variable
             os.environ[name] = value
-            await ctx.print(f"Set {name}={value}")
+            await ctx.print(f"✅ Set **{name}** = `{value}`")
