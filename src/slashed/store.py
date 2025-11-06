@@ -27,7 +27,7 @@ from slashed.output import CallbackOutputWriter, DefaultOutputWriter
 
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
     import os
 
     from prompt_toolkit.document import Document
@@ -54,6 +54,7 @@ class CommandStore:
         history_file: str | os.PathLike[str] | None = None,
         *,
         event_handler: CommandStoreEventHandler | None = None,
+        commands: Sequence[type[SlashedCommand] | BaseCommand] | None = None,
         enable_system_commands: bool = False,
     ):
         """Initialize command store.
@@ -61,6 +62,7 @@ class CommandStore:
         Args:
             history_file: Optional path to history file
             event_handler: Optional event handler for command execution events
+            commands: Optional list of commands to register
             enable_system_commands: Whether to enable system execution commands.
                                   Disabled by default for security.
         """
@@ -73,6 +75,8 @@ class CommandStore:
         self._initialized = False
         if self._history_path:
             self._history_path.parent.mkdir(parents=True, exist_ok=True)
+        for cmd in commands or []:
+            self.register_command(cmd)
 
     @property
     def command_events(self) -> DictEvents:

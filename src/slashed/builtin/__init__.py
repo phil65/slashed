@@ -11,7 +11,7 @@ from slashed.builtin.system import (
     KillCommand,
     EnvCommand,
 )
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from slashed.base import BaseCommand
@@ -23,7 +23,7 @@ def get_builtin_commands(
     enable_exit: bool = True,
 ) -> list[BaseCommand]:
     """Get list of built-in commands."""
-    commands = []
+    commands: list[Any] = []
     if enable_help:
         commands.append(HelpCommand())
     if enable_exit:
@@ -41,7 +41,7 @@ def get_system_commands(
     enable_env: bool = True,
 ) -> list[BaseCommand]:
     """Get system execution commands."""
-    commands = []
+    commands: list[Any] = []
     if enable_exec:
         commands.append(ExecCommand())
     if enable_run:
