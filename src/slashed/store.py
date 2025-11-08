@@ -197,7 +197,7 @@ class CommandStore:
         command_str: str,
         fallback_context: Any | None = None,
         metadata: dict[str, Any] | None = None,
-    ) -> None:
+    ) -> Any:
         """Execute command with automatic context matching.
 
         Args:
@@ -232,7 +232,7 @@ class CommandStore:
             msg = f"No matching context found for command {command.name}"
             raise CommandError(msg)
 
-        await self.execute_command(command_str, ctx)
+        return await self.execute_command(command_str, ctx)
 
     def register_command(self, command: type[SlashedCommand] | BaseCommand):
         """Register a new command.
@@ -311,7 +311,7 @@ class CommandStore:
         self,
         command_str: str,
         ctx: CommandContext[TContextData],
-    ):
+    ) -> Any:
         """Execute a command from string input.
 
         Args:
@@ -359,7 +359,7 @@ class CommandStore:
                     if command.help_text:
                         sections.extend(["Help:", command.help_text])
                     await ctx.print("\n".join(sections))
-                    return
+                    return None
 
             msg = "Executing command: %s (args=%s, kwargs=%s)"
             logger.debug(msg, parsed.name, parsed.args.args, parsed.args.kwargs)
@@ -388,6 +388,8 @@ class CommandStore:
                 await self.event_handler(event)
             self.command_executed.emit(event)
             raise CommandError(msg) from e
+        else:
+            return result
 
     async def execute_command_with_context[T](
         self,
@@ -395,7 +397,7 @@ class CommandStore:
         context: T | None = None,  # type: ignore[type-var]
         output_writer: OutputWriter | Callable[..., Any] | None = None,
         metadata: dict[str, Any] | None = None,
-    ):
+    ) -> Any:
         """Execute a command with a custom context.
 
         Args:
@@ -409,7 +411,7 @@ class CommandStore:
             output_writer=output_writer,
             metadata=metadata,
         )
-        await self.execute_command(command_str, ctx)
+        return await self.execute_command(command_str, ctx)
 
     def register_builtin_commands(self):
         """Register default system commands."""
