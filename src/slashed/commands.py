@@ -108,7 +108,7 @@ class SlashedCommand(BaseCommand):
         ctx: CommandContext,
         args: list[str],
         kwargs: dict[str, str],
-    ):
+    ) -> Any:
         """Execute command by binding command-line arguments to method parameters."""
         method = type(self).execute_command
         call_args = parse_method(method, ctx, args, kwargs)

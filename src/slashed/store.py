@@ -364,8 +364,13 @@ class CommandStore:
             msg = "Executing command: %s (args=%s, kwargs=%s)"
             logger.debug(msg, parsed.name, parsed.args.args, parsed.args.kwargs)
             # Execute it with all args, letting command handle help if it wants to
-            await command.execute(ctx, parsed.args.args, parsed.args.kwargs)
-            event = CommandExecutedEvent(command=command_str, context=ctx, success=True)
+            result = await command.execute(ctx, parsed.args.args, parsed.args.kwargs)
+            event = CommandExecutedEvent(
+                command=command_str,
+                context=ctx,
+                success=True,
+                result=result,
+            )
             if self.event_handler:
                 await self.event_handler(event)
             self.command_executed.emit(event)

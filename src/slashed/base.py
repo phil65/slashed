@@ -139,7 +139,9 @@ class BaseCommand(ABC):
         return self._help_text or self.description
 
     @abstractmethod
-    async def execute(self, ctx: CommandContext, args: list[str], kwargs: dict[str, str]):
+    async def execute(
+        self, ctx: CommandContext, args: list[str], kwargs: dict[str, str]
+    ) -> Any:
         """Execute the command with parsed arguments."""
         ...
 
@@ -192,14 +194,15 @@ class Command(BaseCommand):
         ctx: CommandContext,
         args: list[str] | None = None,
         kwargs: dict[str, str] | None = None,
-    ):
+    ) -> Any:
         """Execute the command using provided function."""
         args = args or []
         kwargs = kwargs or {}
 
         result = self._execute_func(ctx, args, kwargs)
         if inspect.isawaitable(result):
-            await cast(Awaitable[None], result)
+            return await cast(Awaitable[None], result)
+        return result
 
     def get_completer(self) -> CompletionProvider | None:
         """Get completion provider."""

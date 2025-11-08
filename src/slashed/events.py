@@ -33,6 +33,7 @@ class CommandExecutedEvent[TData]:
     command: str
     context: CommandContext[TData]
     success: bool
+    result: Any | None = None
     error: Exception | None = None
 
 
