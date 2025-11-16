@@ -92,7 +92,7 @@ class CommandRouter[TGlobalContext, TRouteContext]:
         self,
         global_context: TGlobalContext,
         commands: CommandStore,
-    ):
+    ) -> None:
         """Initialize router.
 
         Args:

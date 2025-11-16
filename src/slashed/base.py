@@ -28,7 +28,7 @@ type CommandFunc = SyncCommandFunc | AsyncCommandFunc
 class OutputWriter(Protocol):
     """Interface for command output."""
 
-    async def print(self, message: str):
+    async def print(self, message: str) -> None:
         """Write a message to output."""
         ...
 
@@ -47,7 +47,7 @@ class CommandContext[TData]:
     command_store: CommandStore
     metadata: dict[str, Any] = field(default_factory=dict)
 
-    async def print(self, message: str):
+    async def print(self, message: str) -> None:
         """Write a message to output."""
         self.command_store.output.emit(message)
         if self.command_store.event_handler:
@@ -160,7 +160,7 @@ class Command(BaseCommand):
         help_text: str | None = None,
         completer: CompletionProvider | Callable[[], CompletionProvider] | None = None,
         condition: ConditionPredicate | None = None,
-    ):
+    ) -> None:
         """Initialize command.
 
         Args:
@@ -267,8 +267,8 @@ if __name__ == "__main__":
 
     from slashed import CommandStore, SlashedCommand
 
-    async def command_example():
-        async def test(ctx: CommandContext, args, kwargs):
+    async def command_example() -> None:
+        async def test(ctx: CommandContext, args, kwargs) -> None:
             print(f"Testing with {args} and {kwargs}")
 
         cmd = Command(test, name="test_fn")
@@ -279,14 +279,14 @@ if __name__ == "__main__":
         )
         print(result)
 
-    async def slashedcommand_example():
-        def test(ctx: CommandContext, a: str, b: str):
+    async def slashedcommand_example() -> None:
+        def test(ctx: CommandContext, a: str, b: str) -> None:
             print(f"Testing with {a} and {b}")
 
         class TestCommand(SlashedCommand):
             name = "test_fn"
 
-            def execute_command(self, ctx: CommandContext[None], a: str, b: str):
+            def execute_command(self, ctx: CommandContext[None], a: str, b: str) -> None:
                 print(f"Testing with {a} and {b}")
 
         store = CommandStore()

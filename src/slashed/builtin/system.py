@@ -99,7 +99,9 @@ class ProcessesCommand(SlashedCommand):
     def is_available(self) -> bool:
         return find_spec("psutil") is not None
 
-    async def execute_command(self, ctx: CommandContext, *, filter_by: str | None = None):
+    async def execute_command(
+        self, ctx: CommandContext, *, filter_by: str | None = None
+    ) -> None:
         """List running processes."""
         import psutil
 
@@ -159,7 +161,7 @@ class SystemInfoCommand(SlashedCommand):
     def is_available(self) -> bool:
         return find_spec("psutil") is not None
 
-    async def execute_command(self, ctx: CommandContext):
+    async def execute_command(self, ctx: CommandContext) -> None:
         """Show system information."""
         import psutil
 
@@ -258,7 +260,7 @@ class EnvCommand(SlashedCommand):
         ctx: CommandContext,
         name: str | None = None,
         value: str | None = None,
-    ):
+    ) -> None:
         """Manage environment variables."""
         if name is None:
             # Show all variables as markdown table

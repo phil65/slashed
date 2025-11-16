@@ -60,14 +60,14 @@ class SlashedCommand(BaseCommand):
     help_text: str = ""
     """Optional help text override"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize command instance."""
         self.description = (
             self.description or inspect.getdoc(self.__class__) or "No description"
         )
         self.help_text = type(self).help_text or self.description
 
-    def __init_subclass__(cls):
+    def __init_subclass__(cls) -> None:
         """Process command class at definition time.
 
         Validates required attributes and generates description/usage from metadata.
@@ -92,7 +92,7 @@ class SlashedCommand(BaseCommand):
         self,
         *args: Any,
         **kwargs: Any,
-    ):
+    ) -> Any:
         """Execute the command logic.
 
         This method should be implemented with explicit parameters.

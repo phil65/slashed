@@ -118,13 +118,13 @@ class CommandWidgetMixin[TContext]:
     class CommandExecuted(Message):
         """Posted when a command is executed."""
 
-        def __init__(self, command: str):
+        def __init__(self, command: str) -> None:
             self.command = command
             super().__init__()
 
     class InputSubmitted(Message):
         """Regular text input was submitted."""
 
-        def __init__(self, text: str):
+        def __init__(self, text: str) -> None:
             self.text = text
             super().__init__()

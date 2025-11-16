@@ -25,13 +25,13 @@ def get_logger(name: str) -> logging.Logger:
 class SessionLogHandler(logging.Handler):
     """Captures logs for display in chat session."""
 
-    def __init__(self, output_writer: OutputWriter):
+    def __init__(self, output_writer: OutputWriter) -> None:
         super().__init__()
         self.output_writer = output_writer
         self.setFormatter(logging.Formatter("📝 [%(levelname)s] %(message)s"))
         self._tasks: WeakSet[asyncio.Task] = WeakSet()
 
-    def emit(self, record: logging.LogRecord):
+    def emit(self, record: logging.LogRecord) -> None:
         try:
             msg = self.format(record)
             task = asyncio.create_task(self.output_writer.print(msg))
@@ -40,7 +40,7 @@ class SessionLogHandler(logging.Handler):
         except Exception:  # noqa: BLE001
             self.handleError(record)
 
-    async def wait_for_tasks(self):
+    async def wait_for_tasks(self) -> None:
         """Wait for all pending log output tasks to complete."""
         if self._tasks:
             await asyncio.gather(*self._tasks, return_exceptions=True)

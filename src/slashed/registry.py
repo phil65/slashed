@@ -31,7 +31,7 @@ class CommandEntry:
 class CommandRegistry:
     """Collect commands for later registration."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize registry."""
         self.commands: list[CommandEntry] = []
 
@@ -65,7 +65,7 @@ class CommandRegistry:
 
         return decorator
 
-    def register_to(self, store: CommandStore):
+    def register_to(self, store: CommandStore) -> None:
         """Register all collected commands to a store."""
         for entry in self.commands:
             store.add_command(

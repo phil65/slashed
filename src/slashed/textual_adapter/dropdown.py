@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 class CompletionOption(Option):
     """An option in the completion dropdown."""
 
-    def __init__(self, completion: CompletionItem):
+    def __init__(self, completion: CompletionItem) -> None:
         display = Text.from_markup(f"[blue]{completion.text}[/]")
         if completion.metadata:
             # Only use first line of metadata

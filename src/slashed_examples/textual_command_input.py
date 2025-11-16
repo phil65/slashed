@@ -45,7 +45,7 @@ class ColorCommand(SlashedCommand):
         self,
         ctx: CommandContext,
         scheme: str,
-    ):
+    ) -> None:
         """Change the color scheme."""
         await ctx.print(f"Changing color scheme to: {scheme}")
 

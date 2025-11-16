@@ -56,7 +56,7 @@ class CommandStore:
         event_handler: CommandStoreEventHandler | None = None,
         commands: Sequence[type[SlashedCommand] | BaseCommand] | None = None,
         enable_system_commands: bool = False,
-    ):
+    ) -> None:
         """Initialize command store.
 
         Args:
@@ -86,7 +86,7 @@ class CommandStore:
     def context_events(self) -> DictEvents:
         return self._contexts._contexts.events
 
-    def _initialize_sync(self):
+    def _initialize_sync(self) -> None:
         """Initialize the store synchronously."""
         if self._initialized:
             return
@@ -103,11 +103,11 @@ class CommandStore:
         self.register_builtin_commands()
         self._initialized = True
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize the store (async wrapper for backward compatibility)."""
         self._initialize_sync()
 
-    def add_to_history(self, command: str):
+    def add_to_history(self, command: str) -> None:
         """Add command to history."""
         if not command.strip():
             return
@@ -254,7 +254,7 @@ class CommandStore:
             raise ValueError(msg)
         self._commands[command.name] = command
 
-    def unregister_command(self, name: str):
+    def unregister_command(self, name: str) -> None:
         """Remove a command.
 
         Args:
@@ -413,7 +413,7 @@ class CommandStore:
         )
         return await self.execute_command(command_str, ctx)
 
-    def register_builtin_commands(self):
+    def register_builtin_commands(self) -> None:
         """Register default system commands."""
         from slashed.builtin import get_builtin_commands
 

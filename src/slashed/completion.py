@@ -54,7 +54,7 @@ class CompletionContext[TCommandData]:
         self,
         document: Document,
         command_context: CommandContext[TCommandData] | None = None,
-    ):
+    ) -> None:
         """Initialize completion context.
 
         Args:
@@ -88,7 +88,7 @@ class CompletionContext[TCommandData]:
         """Check if command context is available."""
         return self._command_context is not None
 
-    def _parse_document(self):
+    def _parse_document(self) -> None:
         """Parse document into command and arguments."""
         text = self._document.text.lstrip()
 
@@ -147,7 +147,7 @@ class CompletionProvider(ABC):
 class CommandCompleter:
     """Main command completion implementation."""
 
-    def __init__(self, commands: dict[str, BaseCommand]):
+    def __init__(self, commands: dict[str, BaseCommand]) -> None:
         """Initialize command completer.
 
         Args:
@@ -156,7 +156,7 @@ class CommandCompleter:
         self._commands = commands
         self._global_providers: list[CompletionProvider] = []
 
-    def add_global_provider(self, provider: CompletionProvider):
+    def add_global_provider(self, provider: CompletionProvider) -> None:
         """Add a global completion provider."""
         self._global_providers.append(provider)
 

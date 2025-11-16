@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 class DefaultOutputWriter(OutputWriter):
     """Default output implementation using rich if available."""
 
-    def __init__(self, **console_kwargs: Any):
+    def __init__(self, **console_kwargs: Any) -> None:
         """Initialize output writer.
 
         Args:
@@ -46,10 +46,10 @@ class DefaultOutputWriter(OutputWriter):
 class QueueOutputWriter(DefaultOutputWriter):
     """Output writer that puts messages in queue."""
 
-    def __init__(self, queue: asyncio.Queue[str]):
+    def __init__(self, queue: asyncio.Queue[str]) -> None:
         self.queue = queue
 
-    async def print(self, message: str):
+    async def print(self, message: str) -> None:
         await self.queue.put(message)
 
 

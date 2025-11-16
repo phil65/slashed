@@ -33,7 +33,7 @@ class PromptToolkitCompleter[TContextData = Any](Completer):
         data: TContextData | None = None,
         output_writer: OutputWriter | None = None,
         metadata: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         """Initialize completer.
 
         Args:

@@ -51,7 +51,7 @@ class PathCompleter(CompletionProvider):
         show_hidden: bool = False,
         expanduser: bool = True,
         base_path: JoinablePathLike | None = None,
-    ):
+    ) -> None:
         """Initialize path completer.
 
         Args:
@@ -150,7 +150,7 @@ class EnvVarCompleter(CompletionProvider):
         self,
         prefixes: Sequence[str] | None = None,
         include_values: bool = True,
-    ):
+    ) -> None:
         """Initialize environment variable completer.
 
         Args:
@@ -183,7 +183,7 @@ class ChoiceCompleter(CompletionProvider):
         self,
         choices: Sequence[str] | dict[str, str],
         ignore_case: bool = True,
-    ):
+    ) -> None:
         """Initialize choice completer.
 
         Args:
@@ -223,7 +223,7 @@ class MultiValueCompleter(CompletionProvider):
         provider: CompletionProvider,
         delimiter: str = ",",
         strip: bool = True,
-    ):
+    ) -> None:
         """Initialize multi-value completer.
 
         Args:
@@ -276,7 +276,7 @@ class KeywordCompleter(CompletionProvider):
         self,
         keywords: dict[str, Any],
         value_provider: CompletionProvider | None = None,
-    ):
+    ) -> None:
         """Initialize keyword completer.
 
         Args:
@@ -312,7 +312,7 @@ class KeywordCompleter(CompletionProvider):
 class ChainedCompleter(CompletionProvider):
     """Combines multiple completers."""
 
-    def __init__(self, *providers: CompletionProvider):
+    def __init__(self, *providers: CompletionProvider) -> None:
         """Initialize chained completer.
 
         Args:
@@ -354,7 +354,7 @@ class CallbackCompleter(CompletionProvider):
             | Callable[[CompletionContext], Awaitable[Iterable[str | CompletionItem]]]
         ),
         kind: CompletionKind | None = None,
-    ):
+    ) -> None:
         self._callback = callback
         self._kind = kind
         self._is_async = inspect.iscoroutinefunction(callback)

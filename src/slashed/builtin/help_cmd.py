@@ -46,7 +46,7 @@ class HelpCommand(SlashedCommand):
         self,
         ctx: CommandContext,
         command: str | None = None,
-    ):
+    ) -> None:
         """Show available commands or detailed help for a specific command."""
         store = ctx.command_store
         output_lines = []
