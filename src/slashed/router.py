@@ -305,7 +305,7 @@ class CommandRouter[TGlobalContext, TRouteContext]:
             raise RuntimeError(msg)  # noqa: TRY004
 
         return ParsedRoute[TRouteContext](
-            context=context,  # type: ignore  # We've verified the type
+            context=context,
             command=parsed.command,
             route=parsed.route,  # type: ignore  # We know it's the right type
         )
@@ -357,7 +357,7 @@ class CommandRouter[TGlobalContext, TRouteContext]:
 
     async def get_completions(
         self,
-        context: CompletionContext,
+        context: CompletionContext[Any],
     ) -> AsyncIterator[CompletionItem]:
         """Get completions including route prefixes."""
         word = context.current_word
@@ -410,7 +410,7 @@ class CommandRouter[TGlobalContext, TRouteContext]:
                                 yield CompletionItem(
                                     text=cmd.name,
                                     metadata=cmd.description,
-                                    kind="command",  # type: ignore
+                                    kind="command",
                                 )
             else:
                 # Global context completions
@@ -440,7 +440,7 @@ class CommandRouter[TGlobalContext, TRouteContext]:
                             yield CompletionItem(
                                 text=cmd.name,
                                 metadata=cmd.description,
-                                kind="command",  # type: ignore
+                                kind="command",
                             )
 
         except CommandError:

@@ -26,9 +26,9 @@ class CommandWidgetMixin[TContext]:
     """Mixin that adds command functionality to input widgets."""
 
     id: str | None
-    screen: Screen
+    screen: Screen[Any]
     post_message: Callable[..., Any]
-    app: App
+    app: App[Any]
 
     def __init__(
         self,
@@ -42,13 +42,13 @@ class CommandWidgetMixin[TContext]:
         # Create store internally
         self.store = CommandStore(enable_system_commands=enable_system_commands)
         self.store._initialize_sync()
-        self.output_writer = TextualOutputWriter(self.app)  # type: ignore
+        self.output_writer = TextualOutputWriter(self.app)
         self.context = self.store.create_context(
             data=context_data, output_writer=self.output_writer
         )
         self._showing_dropdown = False
         self._command_tasks: set[asyncio.Task[None]] = set()
-        self.logger = logging.getLogger(f"slashed.textual.command_input.{self.id}")  # type: ignore
+        self.logger = logging.getLogger(f"slashed.textual.command_input.{self.id}")
         self._output_id = output_id
         self._status_id = status_id
         if show_notifications:

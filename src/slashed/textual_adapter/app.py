@@ -32,7 +32,7 @@ class TextualOutputWriter(OutputWriter):
     - Other widgets: Try update() method
     """
 
-    def __init__(self, app: App) -> None:
+    def __init__(self, app: App[Any]) -> None:
         self.app = app
         self._bindings: dict[str, str] = {}
         self._default_binding: str | None = None
@@ -89,7 +89,7 @@ class TextualOutputWriter(OutputWriter):
                 raise TypeError(msg) from e
 
 
-class SlashedApp[TContext, TResult](App[TResult]):  # type: ignore[type-var]
+class SlashedApp[TContext, TResult](App[TResult]):
     """Base app with slash command support.
 
     This app provides slash command functionality with optional typed context data.

@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 
 if TYPE_CHECKING:
@@ -19,7 +19,7 @@ class CommandEntry:
     """Command metadata collected by registry."""
 
     name: str
-    func: Callable
+    func: Callable[..., Any]
     description: str | None = None
     category: str = "general"
     usage: str | None = None

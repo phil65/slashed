@@ -234,7 +234,7 @@ class CommandStore:
 
         return await self.execute_command(command_str, ctx)
 
-    def register_command(self, command: type[SlashedCommand] | BaseCommand):
+    def register_command(self, command: type[SlashedCommand] | BaseCommand) -> None:
         """Register a new command.
 
         Args:
@@ -394,7 +394,7 @@ class CommandStore:
     async def execute_command_with_context[T](
         self,
         command_str: str,
-        context: T | None = None,  # type: ignore[type-var]
+        context: T | None = None,
         output_writer: OutputWriter | Callable[..., Any] | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> Any:

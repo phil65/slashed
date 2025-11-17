@@ -29,7 +29,7 @@ class SessionLogHandler(logging.Handler):
         super().__init__()
         self.output_writer = output_writer
         self.setFormatter(logging.Formatter("📝 [%(levelname)s] %(message)s"))
-        self._tasks: WeakSet[asyncio.Task] = WeakSet()
+        self._tasks: WeakSet[asyncio.Task[None]] = WeakSet()
 
     def emit(self, record: logging.LogRecord) -> None:
         try:

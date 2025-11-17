@@ -139,7 +139,7 @@ class CompletionProvider(ABC):
     @abstractmethod
     def get_completions(
         self,
-        context: CompletionContext,
+        context: CompletionContext[Any],
     ) -> AsyncIterator[CompletionItem]:
         """Get completion suggestions."""
 
@@ -162,7 +162,7 @@ class CommandCompleter:
 
     async def get_completions(
         self,
-        context: CompletionContext,
+        context: CompletionContext[Any],
     ) -> AsyncIterator[CompletionItem]:
         """Get completions for the current context."""
         # If at start of command, complete command names

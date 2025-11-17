@@ -101,7 +101,7 @@ class SlashedCommand(BaseCommand):
 
     async def execute(
         self,
-        ctx: CommandContext,
+        ctx: CommandContext[Any],
         args: list[str],
         kwargs: dict[str, str],
     ) -> Any:
@@ -113,11 +113,11 @@ class SlashedCommand(BaseCommand):
 
 
 def parse_method(
-    method: Callable,
-    ctx: CommandContext,
+    method: Callable[..., Any],
+    ctx: CommandContext[Any],
     args: list[str],
     kwargs: dict[str, str],
-) -> list[str | CommandContext]:
+) -> list[str | CommandContext[Any]]:
     """Parse method parameters and return a list of positional arguments."""
     sig = inspect.signature(method)
     # Get parameter information (skip self)
@@ -133,7 +133,9 @@ def parse_method(
         parameters_for_matching = {
             k: v for k, v in parameters.items() if k != ctx_param_name
         }
-        call_args: list[str | CommandContext] = [ctx]  # Add context as first argument
+        call_args: list[str | CommandContext[Any]] = [
+            ctx
+        ]  # Add context as first argument
     else:
         parameters_for_matching = parameters
         call_args = []  # No context parameter
@@ -180,7 +182,7 @@ def parse_method(
     return call_args
 
 
-def extract_usage_params(func: Callable) -> list[str]:
+def extract_usage_params(func: Callable[..., Any]) -> list[str]:
     """Extract usage parameters from a function's signature."""
     sig = inspect.signature(func)
     params = list(sig.parameters.items())

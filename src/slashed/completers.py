@@ -71,7 +71,7 @@ class PathCompleter(CompletionProvider):
 
     async def get_completions(
         self,
-        context: CompletionContext,
+        context: CompletionContext[Any],
     ) -> AsyncIterator[CompletionItem]:
         """Get path completions."""
         word = context.current_word or "."
@@ -162,7 +162,7 @@ class EnvVarCompleter(CompletionProvider):
 
     async def get_completions(
         self,
-        context: CompletionContext,
+        context: CompletionContext[Any],
     ) -> AsyncIterator[CompletionItem]:
         """Get environment variable completions."""
         word = context.current_word.lstrip("$")
@@ -173,7 +173,7 @@ class EnvVarCompleter(CompletionProvider):
 
             if key.startswith(word):
                 meta = value[:50] + "..." if self.include_values else None
-                yield CompletionItem(text=f"${key}", metadata=meta, kind="env")  # type: ignore[arg-type]
+                yield CompletionItem(text=f"${key}", metadata=meta, kind="env")
 
 
 class ChoiceCompleter(CompletionProvider):
@@ -200,7 +200,7 @@ class ChoiceCompleter(CompletionProvider):
 
     async def get_completions(
         self,
-        context: CompletionContext,
+        context: CompletionContext[Any],
     ) -> AsyncIterator[CompletionItem]:
         """Get matching choices."""
         word = context.current_word
@@ -212,7 +212,7 @@ class ChoiceCompleter(CompletionProvider):
 
         for choice in matches:
             meta = self.descriptions.get(choice)
-            yield CompletionItem(text=choice, metadata=meta, kind="choice")  # type: ignore[arg-type]
+            yield CompletionItem(text=choice, metadata=meta, kind="choice")
 
 
 class MultiValueCompleter(CompletionProvider):
@@ -237,7 +237,7 @@ class MultiValueCompleter(CompletionProvider):
 
     async def get_completions(
         self,
-        context: CompletionContext,
+        context: CompletionContext[Any],
     ) -> AsyncIterator[CompletionItem]:
         """Get completions for current value."""
         # Use full text instead of just current_word for splitting
@@ -251,7 +251,7 @@ class MultiValueCompleter(CompletionProvider):
 
         # Create modified context with just the current value
         mod_context = copy(context)
-        mod_context._current_word = current  # type: ignore[attr-defined]
+        mod_context._current_word = current
 
         # Build prefix from previous values if we have more than one value
         prefix = ""
@@ -288,7 +288,7 @@ class KeywordCompleter(CompletionProvider):
 
     async def get_completions(
         self,
-        context: CompletionContext,
+        context: CompletionContext[Any],
     ) -> AsyncIterator[CompletionItem]:
         """Get keyword completions."""
         word = context.current_word
@@ -322,7 +322,7 @@ class ChainedCompleter(CompletionProvider):
 
     async def get_completions(
         self,
-        context: CompletionContext,
+        context: CompletionContext[Any],
     ) -> AsyncIterator[CompletionItem]:
         """Get completions from all providers."""
         for provider in self.providers:
@@ -350,8 +350,10 @@ class CallbackCompleter(CompletionProvider):
     def __init__(
         self,
         callback: (
-            Callable[[CompletionContext], Iterable[str | CompletionItem]]
-            | Callable[[CompletionContext], Awaitable[Iterable[str | CompletionItem]]]
+            Callable[[CompletionContext[Any]], Iterable[str | CompletionItem]]
+            | Callable[
+                [CompletionContext[Any]], Awaitable[Iterable[str | CompletionItem]]
+            ]
         ),
         kind: CompletionKind | None = None,
     ) -> None:
@@ -361,7 +363,7 @@ class CallbackCompleter(CompletionProvider):
 
     async def get_completions(
         self,
-        context: CompletionContext,
+        context: CompletionContext[Any],
     ) -> AsyncIterator[CompletionItem]:
         try:
             result = self._callback(context)
@@ -374,7 +376,7 @@ class CallbackCompleter(CompletionProvider):
 
             for item in items:
                 if isinstance(item, str):
-                    yield CompletionItem(text=item, kind=self._kind)  # type: ignore
+                    yield CompletionItem(text=item, kind=self._kind)
                 else:
                     yield item
         except Exception as e:  # noqa: BLE001

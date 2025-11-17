@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from slashed.base import CommandContext  # noqa: TC001
 from slashed.commands import SlashedCommand
@@ -33,7 +33,7 @@ class HelpCommand(SlashedCommand):
     def get_completer(self) -> CompletionProvider:
         """Create completer that suggests command names."""
 
-        def get_choices(context: CompletionContext) -> Iterator[CompletionItem]:
+        def get_choices(context: CompletionContext[Any]) -> Iterator[CompletionItem]:
             store = context.command_context.command_store
             for cmd in store.list_commands():
                 yield CompletionItem(
@@ -44,7 +44,7 @@ class HelpCommand(SlashedCommand):
 
     async def execute_command(
         self,
-        ctx: CommandContext,
+        ctx: CommandContext[Any],
         command: str | None = None,
     ) -> None:
         """Show available commands or detailed help for a specific command."""
@@ -94,7 +94,7 @@ class ExitCommand(SlashedCommand):
     name = "exit"
     category = "system"
 
-    async def execute_command(self, ctx: CommandContext):
+    async def execute_command(self, ctx: CommandContext[Any]) -> None:
         """Exit the chat session."""
         msg = "Session ended."
         raise ExitCommandError(msg)

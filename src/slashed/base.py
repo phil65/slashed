@@ -7,7 +7,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 import inspect
 import shlex
-from typing import TYPE_CHECKING, Any, Protocol, cast
+from typing import TYPE_CHECKING, Any, Protocol
 
 from slashed.completion import CompletionProvider
 from slashed.events import CommandOutputEvent
@@ -18,9 +18,9 @@ if TYPE_CHECKING:
     from slashed.store import CommandStore
 
 type ConditionPredicate = Callable[[], bool]
-type SyncCommandFunc = Callable[[CommandContext, list[str], dict[str, str]], None]
+type SyncCommandFunc = Callable[[CommandContext[Any], list[str], dict[str, str]], None]
 type AsyncCommandFunc = Callable[
-    [CommandContext, list[str], dict[str, str]], Awaitable[None]
+    [CommandContext[Any], list[str], dict[str, str]], Awaitable[None]
 ]
 type CommandFunc = SyncCommandFunc | AsyncCommandFunc
 
@@ -91,7 +91,9 @@ class ParsedCommand:
     args: ParsedCommandArgs
 
 
-type ExecuteFunc = Callable[[CommandContext, list[str], dict[str, str]], Awaitable[None]]
+type ExecuteFunc = Callable[
+    [CommandContext[Any], list[str], dict[str, str]], Awaitable[None]
+]
 
 
 class BaseCommand(ABC):
@@ -140,7 +142,7 @@ class BaseCommand(ABC):
 
     @abstractmethod
     async def execute(
-        self, ctx: CommandContext, args: list[str], kwargs: dict[str, str]
+        self, ctx: CommandContext[Any], args: list[str], kwargs: dict[str, str]
     ) -> Any:
         """Execute the command with parsed arguments."""
         ...
@@ -191,7 +193,7 @@ class Command(BaseCommand):
 
     async def execute(
         self,
-        ctx: CommandContext,
+        ctx: CommandContext[Any],
         args: list[str] | None = None,
         kwargs: dict[str, str] | None = None,
     ) -> Any:
@@ -201,7 +203,7 @@ class Command(BaseCommand):
 
         result = self._execute_func(ctx, args, kwargs)
         if inspect.isawaitable(result):
-            return await cast(Awaitable[None], result)
+            return await result
         return result
 
     def get_completer(self) -> CompletionProvider | None:
@@ -268,7 +270,7 @@ if __name__ == "__main__":
     from slashed import CommandStore, SlashedCommand
 
     async def command_example() -> None:
-        async def test(ctx: CommandContext, args, kwargs) -> None:
+        async def test(ctx: CommandContext[Any], args: Any, kwargs: Any) -> None:
             print(f"Testing with {args} and {kwargs}")
 
         cmd = Command(test, name="test_fn")
@@ -280,7 +282,7 @@ if __name__ == "__main__":
         print(result)
 
     async def slashedcommand_example() -> None:
-        def test(ctx: CommandContext, a: str, b: str) -> None:
+        def test(ctx: CommandContext[Any], a: str, b: str) -> None:
             print(f"Testing with {a} and {b}")
 
         class TestCommand(SlashedCommand):

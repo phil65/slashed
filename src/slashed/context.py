@@ -69,7 +69,7 @@ class ContextRegistry:
 
     def __init__(self) -> None:
         """Initialize an empty context registry."""
-        self._contexts = EventedDict[type, ContextRegistration]()
+        self._contexts = EventedDict[type, ContextRegistration[Any]]()
 
     def register(
         self,
@@ -120,6 +120,7 @@ class ContextRegistry:
             KeyError: If no context is registered for the type
         """
         if reg := self._contexts.get(context_type):
+            assert isinstance(reg.data, context_type)
             return reg.data
         msg = f"No context registered for type {context_type.__name__}"
         raise KeyError(msg)
@@ -141,7 +142,7 @@ class ContextRegistry:
         msg = f"No context registered for type {context_type.__name__}"
         raise KeyError(msg)
 
-    def list_contexts(self) -> Iterator[ContextRegistration]:
+    def list_contexts(self) -> Iterator[ContextRegistration[Any]]:
         """List all registered contexts."""
         yield from self._contexts.values()
 
@@ -154,12 +155,12 @@ class ContextRegistry:
 
         # Direct CommandContext[T]
         if hasattr(type_hint, "__origin__"):
-            logger.debug("Has __origin__: %r", type_hint.__origin__)  # type: ignore
-            if type_hint.__origin__ is CommandContext:  # type: ignore
+            logger.debug("Has __origin__: %r", type_hint.__origin__)
+            if type_hint.__origin__ is CommandContext:
                 args = get_args(type_hint)
                 logger.debug("CommandContext args: %r", args)
                 if args:
-                    return args[0]
+                    return args[0]  # type: ignore[no-any-return]
 
         # Union types
         origin = get_origin(type_hint)
@@ -174,7 +175,7 @@ class ContextRegistry:
 
         return None
 
-    def match_command(self, command: BaseCommand) -> ContextRegistration | None:
+    def match_command(self, command: BaseCommand) -> ContextRegistration[Any] | None:
         """Find matching context for command based on signature."""
         from typing import Union
 

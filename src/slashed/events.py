@@ -48,8 +48,8 @@ class CommandOutputEvent[TData]:
 CommandStoreEvent = (
     CommandRegisteredEvent
     | CommandUnregisteredEvent
-    | CommandExecutedEvent
-    | CommandOutputEvent
+    | CommandExecutedEvent[Any]
+    | CommandOutputEvent[Any]
 )
 
 
