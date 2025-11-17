@@ -8,6 +8,7 @@ import os
 import platform
 import subprocess
 import sys
+from typing import Any
 
 from slashed.base import CommandContext  # noqa: TC001
 from slashed.commands import SlashedCommand
@@ -105,10 +106,10 @@ class ProcessesCommand(SlashedCommand):
         """List running processes."""
         import psutil
 
-        processes = []
-        for proc in psutil.process_iter(["pid", "name", "status", "memory_percent"]):
+        processes: list[dict[str, Any]] = []
+        for process in psutil.process_iter(["pid", "name", "status", "memory_percent"]):
             try:
-                pinfo = proc.info
+                pinfo = process.info
                 if not filter_by or filter_by.lower() in pinfo["name"].lower():
                     processes.append(pinfo)
             except (psutil.NoSuchProcess, psutil.AccessDenied):

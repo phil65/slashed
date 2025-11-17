@@ -88,11 +88,7 @@ class SlashedCommand(BaseCommand):
             cls.usage = " ".join(usage_params)
 
     @abstractmethod
-    async def execute_command(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
+    async def execute_command(self, *args: Any, **kwargs: Any) -> Any:
         """Execute the command logic.
 
         This method should be implemented with explicit parameters.

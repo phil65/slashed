@@ -211,7 +211,7 @@ class Command(BaseCommand):
                 return None
             case CompletionProvider() as completer:
                 return completer
-            case Callable() as factory:
+            case Callable() as factory:  # type: ignore[misc]
                 return factory()
             case _:
                 typ = type(self._completer)
@@ -286,7 +286,9 @@ if __name__ == "__main__":
         class TestCommand(SlashedCommand):
             name = "test_fn"
 
-            def execute_command(self, ctx: CommandContext[None], a: str, b: str) -> None:
+            async def execute_command(
+                self, ctx: CommandContext[None], a: str, b: str
+            ) -> None:
                 print(f"Testing with {a} and {b}")
 
         store = CommandStore()
