@@ -62,6 +62,7 @@ lint = [
   "mypy; python_version >= '3.14'",
   "mypy[faster-cache]; python_version < '3.14'",
   "ruff",
+  "types-psutil",
   # Only add below (Copier)
 ]
 
