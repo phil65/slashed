@@ -40,9 +40,7 @@ class GreetCommand(SlashedCommand):
     name = "greet"
     category = "demo"
 
-    async def execute_command(
-        self, ctx: CommandContext[AppState], name: str = "World"
-    ) -> None:
+    async def execute_command(self, ctx: CommandContext[AppState], name: str = "World") -> None:
         """Greet someone."""
         state = ctx.get_data()  # Type-safe access to AppState
         await ctx.print(f"Hello, {name}! (from {state.user_name})")

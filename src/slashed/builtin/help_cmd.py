@@ -36,9 +36,7 @@ class HelpCommand(SlashedCommand):
         def get_choices(context: CompletionContext[Any]) -> Iterator[CompletionItem]:
             store = context.command_context.command_store
             for cmd in store.list_commands():
-                yield CompletionItem(
-                    text=cmd.name, metadata=cmd.description, kind="command"
-                )
+                yield CompletionItem(text=cmd.name, metadata=cmd.description, kind="command")
 
         return CallbackCompleter(get_choices)
 

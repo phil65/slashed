@@ -100,9 +100,7 @@ class CommandTextArea[TContext](TextArea, CommandWidgetMixin[TContext]):  # type
             return []
 
         document = Document(text=first_line, cursor_position=len(first_line))
-        completion_context = CompletionContext(
-            document=document, command_context=self.context
-        )
+        completion_context = CompletionContext(document=document, command_context=self.context)
 
         parts = first_line[1:].split()
         self.logger.debug("Getting completions for parts: %s", parts)
@@ -111,9 +109,7 @@ class CommandTextArea[TContext](TextArea, CommandWidgetMixin[TContext]):  # type
         if not parts or (len(parts) == 1 and not first_line.endswith(" ")):
             text = completion_context.current_word.lstrip("/")
             self.logger.debug("Command completion for: %r", text)
-            matches = [
-                cmd for cmd in self.store.list_commands() if cmd.name.startswith(text)
-            ]
+            matches = [cmd for cmd in self.store.list_commands() if cmd.name.startswith(text)]
             return [
                 CompletionItem(text=cmd.name, metadata=cmd.description, kind="command")
                 for cmd in matches
@@ -127,9 +123,7 @@ class CommandTextArea[TContext](TextArea, CommandWidgetMixin[TContext]):  # type
                 current_arg = parts[-1] if len(parts) > 1 else ""
                 self.logger.debug("Help completion filtering with arg: %r", current_arg)
                 matches = [
-                    cmd
-                    for cmd in self.store.list_commands()
-                    if cmd.name.startswith(current_arg)
+                    cmd for cmd in self.store.list_commands() if cmd.name.startswith(current_arg)
                 ]
                 return [
                     CompletionItem(
@@ -147,9 +141,7 @@ class CommandTextArea[TContext](TextArea, CommandWidgetMixin[TContext]):  # type
                 # Create a new document for just the argument part
                 arg_text = parts[-1] if len(parts) > 1 else ""
                 arg_document = Document(text=arg_text, cursor_position=len(arg_text))
-                arg_context = CompletionContext(
-                    document=arg_document, command_context=self.context
-                )
+                arg_context = CompletionContext(document=arg_document, command_context=self.context)
 
                 self.logger.debug("Getting completions for argument: %r", arg_text)
                 completions = [i async for i in completer.get_completions(arg_context)]

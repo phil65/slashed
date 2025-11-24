@@ -62,9 +62,7 @@ class SlashedCommand(BaseCommand):
 
     def __init__(self) -> None:
         """Initialize command instance."""
-        self.description = (
-            self.description or inspect.getdoc(self.__class__) or "No description"
-        )
+        self.description = self.description or inspect.getdoc(self.__class__) or "No description"
         self.help_text = type(self).help_text or self.description
 
     def __init_subclass__(cls) -> None:
@@ -130,21 +128,15 @@ def parse_method(
     # Prepare parameters for matching, excluding context if present
     if has_ctx:
         ctx_param_name = param_names[0]
-        parameters_for_matching = {
-            k: v for k, v in parameters.items() if k != ctx_param_name
-        }
-        call_args: list[str | CommandContext[Any]] = [
-            ctx
-        ]  # Add context as first argument
+        parameters_for_matching = {k: v for k, v in parameters.items() if k != ctx_param_name}
+        call_args: list[str | CommandContext[Any]] = [ctx]  # Add context as first argument
     else:
         parameters_for_matching = parameters
         call_args = []  # No context parameter
 
     # Get required and optional parameters in order (excluding context if applicable)
     param_list = list(parameters_for_matching.items())
-    required = [
-        name for name, param in param_list if param.default == inspect.Parameter.empty
-    ]
+    required = [name for name, param in param_list if param.default == inspect.Parameter.empty]
 
     # Check for too many positional arguments
     max_positional = len(param_list)
@@ -162,9 +154,7 @@ def parse_method(
 
     # Check if required args are provided either as positional or keyword
     missing = [
-        name
-        for idx, name in enumerate(required)
-        if name not in kwargs and len(args) < idx + 1
+        name for idx, name in enumerate(required) if name not in kwargs and len(args) < idx + 1
     ]
 
     if missing:

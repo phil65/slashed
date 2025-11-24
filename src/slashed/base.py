@@ -19,9 +19,7 @@ if TYPE_CHECKING:
 
 type ConditionPredicate = Callable[[], bool]
 type SyncCommandFunc = Callable[[CommandContext[Any], list[str], dict[str, str]], None]
-type AsyncCommandFunc = Callable[
-    [CommandContext[Any], list[str], dict[str, str]], Awaitable[None]
-]
+type AsyncCommandFunc = Callable[[CommandContext[Any], list[str], dict[str, str]], Awaitable[None]]
 type CommandFunc = SyncCommandFunc | AsyncCommandFunc
 
 
@@ -91,9 +89,7 @@ class ParsedCommand:
     args: ParsedCommandArgs
 
 
-type ExecuteFunc = Callable[
-    [CommandContext[Any], list[str], dict[str, str]], Awaitable[None]
-]
+type ExecuteFunc = Callable[[CommandContext[Any], list[str], dict[str, str]], Awaitable[None]]
 
 
 class BaseCommand(ABC):
@@ -288,9 +284,7 @@ if __name__ == "__main__":
         class TestCommand(SlashedCommand):
             name = "test_fn"
 
-            async def execute_command(
-                self, ctx: CommandContext[None], a: str, b: str
-            ) -> None:
+            async def execute_command(self, ctx: CommandContext[None], a: str, b: str) -> None:
                 print(f"Testing with {a} and {b}")
 
         store = CommandStore()

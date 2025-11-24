@@ -351,9 +351,7 @@ class CallbackCompleter(CompletionProvider):
         self,
         callback: (
             Callable[[CompletionContext[Any]], Iterable[str | CompletionItem]]
-            | Callable[
-                [CompletionContext[Any]], Awaitable[Iterable[str | CompletionItem]]
-            ]
+            | Callable[[CompletionContext[Any]], Awaitable[Iterable[str | CompletionItem]]]
         ),
         kind: CompletionKind | None = None,
     ) -> None:

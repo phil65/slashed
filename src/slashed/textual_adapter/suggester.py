@@ -48,9 +48,7 @@ class SlashedSuggester(Suggester):
 
         # Create document for current input
         document = Document(text=value, cursor_position=len(value))
-        completion_context = CompletionContext(
-            document=document, command_context=self.context
-        )
+        completion_context = CompletionContext(document=document, command_context=self.context)
 
         try:
             # If we have a command, use its completer
@@ -60,12 +58,8 @@ class SlashedSuggester(Suggester):
                     if completer := command.get_completer():
                         current_word = completion_context.current_word
                         # Find first matching completion
-                        async for completion in completer.get_completions(
-                            completion_context
-                        ):
-                            if not current_word or completion.text.startswith(
-                                current_word
-                            ):
+                        async for completion in completer.get_completions(completion_context):
+                            if not current_word or completion.text.startswith(current_word):
                                 # For argument completion, preserve the cmd part
                                 cmd_part = value[: value.find(" ") + 1]
                                 # If we have a current word, replace it

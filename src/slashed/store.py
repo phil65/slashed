@@ -116,9 +116,7 @@ class CommandStore:
         if self._history_path:
             self._history_path.write_text("\n".join(self._command_history))
 
-    def get_history(
-        self, limit: int | None = None, newest_first: bool = True
-    ) -> list[str]:
+    def get_history(self, limit: int | None = None, newest_first: bool = True) -> list[str]:
         """Get command history."""
         history = self._command_history
         if newest_first:
@@ -223,9 +221,7 @@ class CommandStore:
 
         # Try to find matching context
         if reg := self._contexts.match_command(command):
-            ctx: CommandContext[Any] = self.create_context(
-                reg.data, metadata=reg.metadata
-            )
+            ctx: CommandContext[Any] = self.create_context(reg.data, metadata=reg.metadata)
         elif fallback_context is not None:
             ctx = self.create_context(fallback_context, metadata=metadata)
         else:
@@ -336,9 +332,7 @@ class CommandStore:
             if "help" in parsed.args.kwargs:
                 # Check command signature via inspect
                 sig = inspect.signature(command.execute)
-                help_param = next(
-                    (p for p in sig.parameters.items() if p[0] == "help"), None
-                )
+                help_param = next((p for p in sig.parameters.items() if p[0] == "help"), None)
 
                 # Only show our help if command doesn't handle help parameter
                 if not help_param:
@@ -435,10 +429,7 @@ class CommandStore:
         category: str = "general",
         usage: str | None = None,
         help_text: str | None = None,
-        completer: str
-        | CompletionProvider
-        | Callable[[], CompletionProvider]
-        | None = None,
+        completer: str | CompletionProvider | Callable[[], CompletionProvider] | None = None,
         condition: Callable[[], bool] | None = None,
     ) -> None:
         """Add a command with flexible configuration options.

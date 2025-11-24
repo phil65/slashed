@@ -14,9 +14,7 @@ if TYPE_CHECKING:
 
 
 class TestCompleter(CompletionProvider):
-    async def get_completions(
-        self, context: CompletionContext
-    ) -> AsyncIterator[CompletionItem]:
+    async def get_completions(self, context: CompletionContext) -> AsyncIterator[CompletionItem]:
         yield CompletionItem(text="test")
         yield CompletionItem(text="test2")
 

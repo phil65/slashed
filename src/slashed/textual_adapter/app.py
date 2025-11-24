@@ -149,9 +149,7 @@ class SlashedApp[TContext, TResult](App[TResult]):
         """Get a suggester configured for this app's store and context."""
         return SlashedSuggester(store=self.store, context=self.context)
 
-    def bind_output(
-        self, output_id: str, widget_query: str, default: bool = False
-    ) -> None:
+    def bind_output(self, output_id: str, widget_query: str, default: bool = False) -> None:
         """Bind an output stream to a widget.
 
         Args:
@@ -169,9 +167,7 @@ class SlashedApp[TContext, TResult](App[TResult]):
     def command_input(
         cls,
         input_id: str,
-    ) -> Callable[
-        [Callable[[Any, str], Awaitable[None]]], Callable[[Any, str], Awaitable[None]]
-    ]:
+    ) -> Callable[[Callable[[Any, str], Awaitable[None]]], Callable[[Any, str], Awaitable[None]]]:
         """Register an Input widget to handle commands.
 
         Args:

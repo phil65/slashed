@@ -48,9 +48,7 @@ class PromptToolkitCompleter[TContextData = Any](Completer):
             data, output_writer, metadata
         )
 
-    def get_completions(
-        self, document: Document, complete_event: Any
-    ) -> Iterable[Completion]:
+    def get_completions(self, document: Document, complete_event: Any) -> Iterable[Completion]:
         """Sync completions - not used but required by interface."""
         return []
 

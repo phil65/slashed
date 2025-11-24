@@ -104,9 +104,7 @@ async def router() -> CommandRouter[GlobalContext, DbContext | FsContext]:
     store.register_command(fs_cmd)
 
     global_ctx = GlobalContext(env="test")
-    router: CommandRouter[GlobalContext, DbContext | FsContext] = CommandRouter(
-        global_ctx, store
-    )
+    router: CommandRouter[GlobalContext, DbContext | FsContext] = CommandRouter(global_ctx, store)
 
     # Add routes with strict permissions
     router.add_route(

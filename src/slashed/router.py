@@ -190,9 +190,7 @@ class CommandRouter[TGlobalContext, TRouteContext]:
             active = " (active)" if route.context == self._active_context else ""
             await output.print(f"@{route.prefix}: {route.description}{active}")
 
-    def _parse_route_internal(
-        self, command: str
-    ) -> ParsedRoute[TGlobalContext | TRouteContext]:
+    def _parse_route_internal(self, command: str) -> ParsedRoute[TGlobalContext | TRouteContext]:
         """Internal method for initial route parsing."""
         if not command.startswith("@"):
             # No route - check if command is restricted to a route
@@ -204,10 +202,7 @@ class CommandRouter[TGlobalContext, TRouteContext]:
                     if route.context == self._active_context:
                         # We're in the right context,
                         # allow the command if it's in allowed_commands
-                        if (
-                            not route.allowed_commands
-                            or command_name in route.allowed_commands
-                        ):
+                        if not route.allowed_commands or command_name in route.allowed_commands:
                             return ParsedRoute[TGlobalContext | TRouteContext](
                                 context=self._active_context,
                                 command=command,
@@ -395,17 +390,14 @@ class CommandRouter[TGlobalContext, TRouteContext]:
                     # Use the command completer
                     if command := self.commands._commands.get(word):
                         if completer := command.get_completer():
-                            async for item in completer.get_completions(
-                                route_completion_ctx
-                            ):
+                            async for item in completer.get_completions(route_completion_ctx):
                                 yield item
                     # Or suggest commands
                     else:
                         commands = self.commands.list_commands()
                         for cmd in commands:
                             if (
-                                not route.allowed_commands
-                                or cmd.name in route.allowed_commands
+                                not route.allowed_commands or cmd.name in route.allowed_commands
                             ) and cmd.name.startswith(word):
                                 yield CompletionItem(
                                     text=cmd.name,
@@ -425,9 +417,7 @@ class CommandRouter[TGlobalContext, TRouteContext]:
                 # First try command completer if we have a word
                 if word and (command := self.commands._commands.get(word)):
                     if completer := command.get_completer():
-                        async for item in completer.get_completions(
-                            global_completion_ctx
-                        ):
+                        async for item in completer.get_completions(global_completion_ctx):
                             yield item
                 # Otherwise suggest commands
                 else:
