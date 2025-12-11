@@ -76,8 +76,8 @@ class SlashedCommand(BaseCommand):
             msg = f"Command class {cls.__name__} must define 'name' attribute"
             raise TypeError(msg)
 
-        # Get description from docstring if empty
-        if not cls.description:
+        # Get description from docstring if not explicitly set on this class
+        if "description" not in cls.__dict__:
             cls.description = inspect.getdoc(cls) or "No description"
 
         # Generate usage from execute signature if not set
