@@ -209,7 +209,7 @@ class Command(BaseCommand):
                 return None
             case CompletionProvider() as completer:
                 return completer
-            case Callable() as factory:  # type: ignore[misc]
+            case Callable() as factory:
                 return factory()
             case _:
                 typ = type(self._completer)
