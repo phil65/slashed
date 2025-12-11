@@ -190,6 +190,15 @@ class CommandStore:
         """Unregister a context type."""
         self._contexts.unregister(context_type)
 
+    def clear(self) -> None:
+        """Clear all commands and contexts from the store."""
+        self._commands.clear()
+        self._contexts = ContextRegistry()
+        self._command_history.clear()
+        # if self._history_path and self._history_path.exists():
+        #     self._history_path.write_text("")
+        self._initialized = False
+
     async def execute_command_auto(
         self,
         command_str: str,
