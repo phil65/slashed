@@ -78,10 +78,17 @@ class SlashedCommand(BaseCommand):
 
         # Get description from docstring if not explicitly set on this class
         if "description" not in cls.__dict__:
-            cls.description = inspect.getdoc(cls) or "No description"
+            # Check if this class has its own docstring (not inherited)
+            own_doc = cls.__dict__.get("__doc__")
+            if own_doc:
+                cls.description = own_doc
+            # Otherwise inherit parent's description (already set from parent's __init_subclass__)
+            # If no parent description exists, use "No description"
+            elif not hasattr(cls, "description") or not cls.description:
+                cls.description = "No description"
 
-        # Generate usage from execute signature if not set
-        if cls.usage is None:
+        # Generate usage from execute signature if not explicitly set on THIS class
+        if "usage" not in cls.__dict__:
             usage_params = extract_usage_params(cls.execute_command)
             cls.usage = " ".join(usage_params)
 
