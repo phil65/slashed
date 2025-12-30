@@ -43,7 +43,7 @@ async def test_command_signals(store: CommandStore, context: CommandContext):
     executed_events: list[CommandExecutedEvent] = []
     store.command_executed.connect(executed_events.append)
 
-    async def hello(ctx: CommandContext, args: list[str], kwargs: dict[str, str]):
+    async def hello(ctx: CommandContext):
         await ctx.print("Hello, World!")
 
     cmd = Command(name="hello", description="Test command", execute_func=hello)
@@ -68,7 +68,7 @@ async def test_command_error_signals(store: CommandStore, context: CommandContex
     executed_events: list[CommandExecutedEvent] = []
     store.command_executed.connect(executed_events.append)
 
-    async def failing_cmd(ctx: CommandContext, args: list[str], kwargs: dict[str, str]):
+    async def failing_cmd(ctx: CommandContext):
         msg = "Command failed"
         raise ValueError(msg)
 
@@ -118,7 +118,7 @@ def test_parse_command():
 def test_command_store_operations(store: CommandStore):
     """Test command store registration and retrieval."""
 
-    async def noop(ctx: CommandContext, args: list[str], kwargs: dict[str, str]): ...
+    async def noop(ctx: CommandContext): ...
 
     cmd = Command(name="test", description="Test command", execute_func=noop)
 
@@ -171,3 +171,51 @@ async def test_context_creation(store: CommandStore):
 
     await ctx.print("test message")
     assert output_received == ["test message"]
+
+
+async def test_command_with_method(store: CommandStore, context: CommandContext):
+    """Test Command with bound method and arguments."""
+
+    class TestService:
+        def __init__(self):
+            self.messages = []
+
+        def add_message(self, ctx: CommandContext, message: str, priority: str = "1"):
+            """Add a message with priority."""
+            self.messages.append({"message": message, "priority": priority})
+            return f"Added: {message} (priority: {priority})"
+
+    service = TestService()
+    cmd = Command(service.add_message, name="add-msg")
+    store.register_command(cmd)
+
+    # Test execution with positional and keyword args
+    result = await store.execute_command("add-msg hello --priority 5", context)
+
+    # Verify method was called correctly
+    assert len(service.messages) == 1
+    assert service.messages[0]["message"] == "hello"
+    assert service.messages[0]["priority"] == "5"
+    assert result == "Added: hello (priority: 5)"
+
+    # Test auto-generated usage
+    assert cmd.usage == "<message> [--priority <value>]"
+
+
+async def test_command_without_context(store: CommandStore, context: CommandContext):
+    """Test Command that doesn't need context."""
+
+    def greet(name: str, greeting: str = "Hello"):
+        """Greet someone."""
+        return f"{greeting}, {name}!"
+
+    cmd = Command(greet, name="greet")
+    store.register_command(cmd)
+
+    result = await store.execute_command("greet World", context)
+    assert result == "Hello, World!"
+
+    result = await store.execute_command("greet World --greeting Hi", context)
+    assert result == "Hi, World!"
+
+    assert cmd.usage == "<name> [--greeting <value>]"

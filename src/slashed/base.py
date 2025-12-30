@@ -7,7 +7,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 import inspect
 import shlex
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol, get_type_hints
 
 from slashed.completion import CompletionProvider
 from slashed.events import CommandOutputEvent
@@ -19,13 +19,7 @@ if TYPE_CHECKING:
 
 type ConditionPredicate = Callable[[], bool]
 type VisibilityPredicate[TContext] = Callable[[CommandContext[TContext]], bool]
-type SyncCommandFunc[TContext] = Callable[
-    [CommandContext[TContext], list[str], dict[str, str]], None
-]
-type AsyncCommandFunc[TContext] = Callable[
-    [CommandContext[TContext], list[str], dict[str, str]], Awaitable[None]
-]
-type CommandFunc[TContext] = SyncCommandFunc[TContext] | AsyncCommandFunc[TContext]
+type CommandFunc = Callable[..., Any] | Callable[..., Awaitable[Any]]
 
 
 class OutputWriter(Protocol):
@@ -183,12 +177,12 @@ class Command[TContext = Any](BaseCommand):
         ```
     """
 
-    _execute_func: CommandFunc[TContext]
+    _execute_func: CommandFunc
     _visible: VisibilityPredicate[TContext] | None
 
     def __init__(
         self,
-        execute_func: CommandFunc[TContext],
+        execute_func: CommandFunc,
         *,
         name: str | None = None,
         description: str | None = None,
@@ -206,7 +200,7 @@ class Command[TContext = Any](BaseCommand):
             name: Optional command name (defaults to function name)
             description: Command description (defaults to function docstring)
             category: Command category
-            usage: Optional usage string
+            usage: Optional usage string (auto-generated if None)
             help_text: Optional help text (defaults to description)
             completer: Optional completion provider or factory
             condition: Optional predicate to check command availability
@@ -215,13 +209,12 @@ class Command[TContext = Any](BaseCommand):
         self.name = name or execute_func.__name__.replace("_", "-")
         self.description = description or execute_func.__doc__ or "No description"
         self.category = category
-        self.usage = usage
+        self.usage = usage or _generate_usage(execute_func)
         self._help_text = help_text or self.description
         self._execute_func = execute_func
         self._completer = completer
         self._condition = condition
         self._visible = visible
-        self._is_async = inspect.iscoroutinefunction(execute_func)
 
     def is_available(self) -> bool:
         """Check if command is available based on condition."""
@@ -245,7 +238,9 @@ class Command[TContext = Any](BaseCommand):
         args = args or []
         kwargs = kwargs or {}
 
-        result = self._execute_func(ctx, args, kwargs)
+        call_args = parse_args(self._execute_func, ctx, args, kwargs)
+        result = self._execute_func(*call_args, **kwargs)
+
         if inspect.isawaitable(result):
             return await result
         return result
@@ -263,6 +258,141 @@ class Command[TContext = Any](BaseCommand):
                 typ = type(self._completer)
                 msg = f"Completer must be CompletionProvider or callable, not {typ}"
                 raise TypeError(msg)
+
+
+def _generate_usage(func: Callable[..., Any]) -> str:
+    """Generate usage string from function signature."""
+    usage_params = extract_usage_params(func)
+    return " ".join(usage_params)
+
+
+def extract_usage_params(func: Callable[..., Any], *, skip_first: bool = False) -> list[str]:
+    """Extract usage parameters from a function's signature.
+
+    Args:
+        func: The function to extract usage from
+        skip_first: If True, skip the first parameter (for methods with 'self')
+    """
+    sig = inspect.signature(func)
+    params = list(sig.parameters.items())
+
+    if skip_first and params:
+        params = params[1:]
+
+    # Check if first parameter is a context
+    if params and _is_context_param(params[0][0], func):
+        params = params[1:]
+
+    usage_params = []
+    for name, param in params:
+        if param.default == inspect.Parameter.empty:
+            usage_params.append(f"<{name}>")
+        else:
+            usage_params.append(f"[--{name} <value>]")
+    return usage_params
+
+
+def parse_args(
+    func: Callable[..., Any],
+    ctx: CommandContext[Any],
+    args: list[str],
+    kwargs: dict[str, str],
+    *,
+    skip_first: bool = False,
+) -> list[str | CommandContext[Any]]:
+    """Parse parameters and return a list of positional arguments.
+
+    Args:
+        func: The function to parse arguments for
+        ctx: The command context
+        args: Positional arguments from command line
+        kwargs: Keyword arguments from command line
+        skip_first: If True, skip the first parameter (for methods with 'self')
+
+    Returns:
+        List of positional arguments to pass to the function
+    """
+    sig = inspect.signature(func)
+    params_list = list(sig.parameters.items())
+    if skip_first and params_list:
+        params_list = params_list[1:]
+    parameters = dict(params_list)
+
+    # Check if we need to pass context
+    param_names = list(parameters.keys())
+    has_ctx = param_names and _is_context_param(param_names[0], func)
+
+    # Prepare parameters for matching, excluding context if present
+    if has_ctx:
+        ctx_param_name = param_names[0]
+        parameters_for_matching = {k: v for k, v in parameters.items() if k != ctx_param_name}
+        call_args: list[str | CommandContext[Any]] = [ctx]
+    else:
+        parameters_for_matching = parameters
+        call_args = []
+
+    # Get required and optional parameters in order
+    param_list = list(parameters_for_matching.items())
+    required = [name for name, param in param_list if param.default == inspect.Parameter.empty]
+
+    # Check for too many positional arguments
+    max_positional = len(param_list)
+    if len(args) > max_positional:
+        param_names_list = [name for name, _ in param_list]
+        msg = (
+            f"Too many positional arguments. Expected at most {max_positional} "
+            f"({param_names_list}), got {len(args)}"
+        )
+        raise CommandError(msg)
+
+    # Check for conflicts between positional and keyword arguments
+    positional_param_names = [name for name, _ in param_list[: len(args)]]
+    conflicts = set(positional_param_names) & set(kwargs.keys())
+    if conflicts:
+        msg = f"Arguments provided both positionally and as keywords: {list(conflicts)}"
+        raise CommandError(msg)
+
+    # Check if required args are provided either as positional or keyword
+    missing = [
+        name for idx, name in enumerate(required) if name not in kwargs and len(args) < idx + 1
+    ]
+
+    if missing:
+        msg = f"Missing required arguments: {missing}"
+        raise CommandError(msg)
+
+    # Validate keyword arguments exist in signature
+    for name in kwargs:
+        if name not in parameters_for_matching:
+            msg = f"Unknown argument: {name}"
+            raise CommandError(msg)
+
+    # Add positional arguments
+    call_args.extend(args)
+    return call_args
+
+
+def _is_context_param(param_name: str, func: Callable[..., Any] | None = None) -> bool:
+    """Determine if a parameter is likely a context parameter.
+
+    Uses type hints if available, falls back to name-based detection.
+    """
+    if func is not None:
+        try:
+            if param_name in (hints := get_type_hints(func)):
+                hint = hints[param_name]
+                # Check if type is CommandContext or a subclass/generic of it
+                origin = getattr(hint, "__origin__", hint)
+                if origin is CommandContext or (
+                    isinstance(origin, type) and issubclass(origin, CommandContext)
+                ):
+                    return True
+        except (TypeError, AttributeError, NameError):
+            # Handle cases where type hints can't be resolved
+            pass
+
+    # Fall back to name-based detection
+    return param_name in ("ctx", "context")
 
 
 def parse_command(cmd_str: str) -> ParsedCommand:
