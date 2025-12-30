@@ -280,18 +280,26 @@ class CommandStore:
         """
         return self._commands.get(name)
 
-    def list_commands(self, category: str | None = None) -> list[BaseCommand]:
-        """List all commands, optionally filtered by category.
+    def list_commands(
+        self,
+        category: str | None = None,
+        ctx: CommandContext[Any] | None = None,
+    ) -> list[BaseCommand]:
+        """List all commands, optionally filtered by category and visibility.
 
         Args:
             category: Optional category to filter by
+            ctx: Optional context for visibility filtering
 
         Returns:
             List of commands
         """
+        commands: list[BaseCommand] = list(self._commands.values())
         if category:
-            return [cmd for cmd in self._commands.values() if cmd.category == category]
-        return list(self._commands.values())
+            commands = [cmd for cmd in commands if cmd.category == category]
+        if ctx is not None:
+            commands = [cmd for cmd in commands if cmd.is_visible(ctx)]
+        return commands
 
     def get_categories(self) -> list[str]:
         """Get list of available command categories.
@@ -301,14 +309,22 @@ class CommandStore:
         """
         return sorted({cmd.category for cmd in self._commands.values()})
 
-    def get_commands_by_category(self) -> dict[str, list[BaseCommand]]:
+    def get_commands_by_category(
+        self,
+        ctx: CommandContext[Any] | None = None,
+    ) -> dict[str, list[BaseCommand]]:
         """Get commands grouped by category.
+
+        Args:
+            ctx: Optional context for visibility filtering
 
         Returns:
             Dict mapping categories to lists of commands
         """
         result: dict[str, list[BaseCommand]] = {}
         for cmd in self._commands.values():
+            if ctx is not None and not cmd.is_visible(ctx):
+                continue
             result.setdefault(cmd.category, []).append(cmd)
         return result
 

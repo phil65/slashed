@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from slashed.store import CommandStore
 
 type ConditionPredicate = Callable[[], bool]
+type VisibilityPredicate = Callable[[CommandContext[Any]], bool]
 type SyncCommandFunc = Callable[[CommandContext[Any], list[str], dict[str, str]], None]
 type AsyncCommandFunc = Callable[[CommandContext[Any], list[str], dict[str, str]], Awaitable[None]]
 type CommandFunc = SyncCommandFunc | AsyncCommandFunc
@@ -117,6 +118,20 @@ class BaseCommand(ABC):
         """
         return True
 
+    def is_visible(self, ctx: CommandContext[Any]) -> bool:
+        """Check if command should be visible in command listings.
+
+        Override to implement context-dependent visibility. This is called
+        when listing commands to filter which ones should be shown to the user.
+
+        Args:
+            ctx: The command context, providing access to context data
+
+        Returns:
+            True if command should be listed, False to hide it
+        """
+        return True
+
     def get_completer(self) -> CompletionProvider | None:
         """Get completion provider for this command.
 
@@ -158,6 +173,7 @@ class Command(BaseCommand):
         help_text: str | None = None,
         completer: CompletionProvider | Callable[[], CompletionProvider] | None = None,
         condition: ConditionPredicate | None = None,
+        visible: VisibilityPredicate | None = None,
     ) -> None:
         """Initialize command.
 
@@ -170,6 +186,7 @@ class Command(BaseCommand):
             help_text: Optional help text (defaults to description)
             completer: Optional completion provider or factory
             condition: Optional predicate to check command availability
+            visible: Optional predicate to check command visibility in listings
         """
         self.name = name or execute_func.__name__.replace("_", "-")
         self.description = description or execute_func.__doc__ or "No description"
@@ -179,12 +196,19 @@ class Command(BaseCommand):
         self._execute_func = execute_func
         self._completer = completer
         self._condition = condition
+        self._visible = visible
         self._is_async = inspect.iscoroutinefunction(execute_func)
 
     def is_available(self) -> bool:
         """Check if command is available based on condition."""
         if self._condition is not None:
             return self._condition()
+        return True
+
+    def is_visible(self, ctx: CommandContext[Any]) -> bool:
+        """Check if command should be visible based on visibility predicate."""
+        if self._visible is not None:
+            return self._visible(ctx)
         return True
 
     async def execute(
