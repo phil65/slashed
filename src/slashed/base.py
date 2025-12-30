@@ -18,10 +18,14 @@ if TYPE_CHECKING:
     from slashed.store import CommandStore
 
 type ConditionPredicate = Callable[[], bool]
-type VisibilityPredicate = Callable[[CommandContext[Any]], bool]
-type SyncCommandFunc = Callable[[CommandContext[Any], list[str], dict[str, str]], None]
-type AsyncCommandFunc = Callable[[CommandContext[Any], list[str], dict[str, str]], Awaitable[None]]
-type CommandFunc = SyncCommandFunc | AsyncCommandFunc
+type VisibilityPredicate[TContext] = Callable[[CommandContext[TContext]], bool]
+type SyncCommandFunc[TContext] = Callable[
+    [CommandContext[TContext], list[str], dict[str, str]], None
+]
+type AsyncCommandFunc[TContext] = Callable[
+    [CommandContext[TContext], list[str], dict[str, str]], Awaitable[None]
+]
+type CommandFunc[TContext] = SyncCommandFunc[TContext] | AsyncCommandFunc[TContext]
 
 
 class OutputWriter(Protocol):
@@ -159,12 +163,32 @@ class BaseCommand(ABC):
         ...
 
 
-class Command(BaseCommand):
-    """Concrete command that can be created directly."""
+class Command[TContext = Any](BaseCommand):
+    """Concrete command that can be created directly.
+
+    Type Parameters:
+        TContext: Type of the context data. Defaults to Any for flexibility.
+                  Use explicit type parameter for type-safe commands.
+
+    Example:
+        ```python
+        # Untyped command (backward compatible)
+        cmd = Command(my_func, name="test")
+
+        # Typed command with context data type
+        cmd: Command[MyContext] = Command(
+            my_func,
+            name="test",
+        )
+        ```
+    """
+
+    _execute_func: CommandFunc[TContext]
+    _visible: VisibilityPredicate[TContext] | None
 
     def __init__(
         self,
-        execute_func: CommandFunc,
+        execute_func: CommandFunc[TContext],
         *,
         name: str | None = None,
         description: str | None = None,
@@ -173,7 +197,7 @@ class Command(BaseCommand):
         help_text: str | None = None,
         completer: CompletionProvider | Callable[[], CompletionProvider] | None = None,
         condition: ConditionPredicate | None = None,
-        visible: VisibilityPredicate | None = None,
+        visible: VisibilityPredicate[TContext] | None = None,
     ) -> None:
         """Initialize command.
 
@@ -205,7 +229,7 @@ class Command(BaseCommand):
             return self._condition()
         return True
 
-    def is_visible(self, ctx: CommandContext[Any]) -> bool:
+    def is_visible(self, ctx: CommandContext[TContext]) -> bool:
         """Check if command should be visible based on visibility predicate."""
         if self._visible is not None:
             return self._visible(ctx)
@@ -213,7 +237,7 @@ class Command(BaseCommand):
 
     async def execute(
         self,
-        ctx: CommandContext[Any],
+        ctx: CommandContext[TContext],
         args: list[str] | None = None,
         kwargs: dict[str, str] | None = None,
     ) -> Any:
