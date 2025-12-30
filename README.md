@@ -126,33 +126,34 @@ await store.execute_command("greet Phil --greeting Hi", ctx)
 
 Slashed offers two different styles for defining commands, each with its own advantages:
 
-### Traditional Style (using Command class)
+### Command Style (using Command class)
 
 ```python
 from slashed import Command, CommandContext
 
-async def add_worker(ctx: CommandContext, args: list[str], kwargs: dict[str, str]):
+def add_worker(ctx: CommandContext, worker_id: str, host: str = "localhost", port: int = 8080):
     """Add a worker to the pool."""
-    worker_id = args[0]
-    host = kwargs.get("host", "localhost")
-    port = kwargs.get("port", "8080")
-    await ctx.print(f"Adding worker {worker_id} at {host}:{port}")
+    print(f"Adding worker {worker_id} at {host}:{port}")
 
+# Usage string is auto-generated from function signature
 cmd = Command(
+    add_worker,
     name="add-worker",
     description="Add a worker to the pool",
-    execute_func=add_worker,
-    usage="<worker_id> --host <host> --port <port>",
     category="workers",
 )
+# cmd.usage will be: "<worker_id> [--host <value>] [--port <value>]"
 ```
 
 #### Advantages:
+- Type-safe argument parsing with automatic validation
+- Auto-generated usage strings from function signatures
+- Works with any callable (functions, methods, lambdas)
+- Smart context injection (only passed if function expects it)
+- Better error messages for missing/invalid arguments
 - Quick to create without inheritance
 - All configuration in one place
 - Easier to create commands dynamically
-- More flexible for simple commands
-- Familiar to users of other command frameworks
 
 ### Declarative Style (using SlashedCommand)
 
@@ -195,18 +196,21 @@ class AddWorkerCommand(SlashedCommand):
 
 ### When to Use Which?
 
-Use the **traditional style** when:
-- Creating simple commands with few parameters
-- Generating commands dynamically
-- Wanting to avoid class boilerplate
-- Need maximum flexibility
+Both styles now offer the same core capabilities (type-safe parsing, auto-generated usage, parameter validation). Choose based on your preference:
 
-Use the **declarative style** when:
-- Building complex commands with many parameters
-- Need type safety and parameter validation
-- Want IDE support for parameters
-- Documentation is important
-- Working in a larger codebase
+Use the **Command style** when:
+- Creating simple commands with functions or methods
+- Generating commands dynamically
+- Working with existing functions/methods
+- Prefer functional programming style
+- Want minimal boilerplate
+
+Use the **SlashedCommand style** when:
+- Building complex commands that benefit from OOP structure
+- Want to group related functionality in classes
+- Need to override command behavior methods
+- Prefer declarative class-based definitions
+- Building a larger command hierarchy
 
 ### Alternative Registration Methods
 

@@ -219,3 +219,36 @@ async def test_command_without_context(store: CommandStore, context: CommandCont
     assert result == "Hi, World!"
 
     assert cmd.usage == "<name> [--greeting <value>]"
+
+
+async def test_command_from_raw(store: CommandStore, context: CommandContext):
+    """Test Command.from_raw for traditional (ctx, args, kwargs) signature."""
+
+    async def raw_handler(ctx: CommandContext, args: list[str], kwargs: dict[str, str]) -> str:
+        """Handle raw args."""
+        name = args[0] if args else "World"
+        greeting = kwargs.get("greeting", "Hello")
+        return f"{greeting}, {name}!"
+
+    cmd = Command.from_raw(raw_handler, name="raw-greet", usage="<name> --greeting <value>")
+    store.register_command(cmd)
+
+    result = await store.execute_command("raw-greet World --greeting Hi", context)
+    assert result == "Hi, World!"
+
+    result = await store.execute_command("raw-greet", context)
+    assert result == "Hello, World!"
+
+
+async def test_command_from_raw_sync(store: CommandStore, context: CommandContext):
+    """Test Command.from_raw with sync function."""
+
+    def raw_sync(ctx: CommandContext, args: list[str], kwargs: dict[str, str]) -> str:
+        """Sync raw handler."""
+        return f"Got {len(args)} args and {len(kwargs)} kwargs"
+
+    cmd = Command.from_raw(raw_sync, name="raw-sync")
+    store.register_command(cmd)
+
+    result = await store.execute_command("raw-sync a b --x 1", context)
+    assert result == "Got 2 args and 1 kwargs"

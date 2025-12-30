@@ -245,6 +245,65 @@ class Command[TContext = Any](BaseCommand):
             return await result
         return result
 
+    @classmethod
+    def from_raw(
+        cls,
+        func: Callable[[CommandContext[Any], list[str], dict[str, str]], Any | Awaitable[Any]],
+        *,
+        name: str | None = None,
+        description: str | None = None,
+        category: str = "general",
+        usage: str | None = None,
+        help_text: str | None = None,
+        completer: CompletionProvider | Callable[[], CompletionProvider] | None = None,
+        condition: ConditionPredicate | None = None,
+        visible: VisibilityPredicate[Any] | None = None,
+    ) -> Command[Any]:
+        """Create a command from a raw-style function.
+
+        Use this for functions that expect the traditional (ctx, args, kwargs) signature,
+        such as when wrapping external command sources.
+
+        Args:
+            func: Function with signature (ctx, args: list[str], kwargs: dict[str, str])
+            name: Optional command name (defaults to function name)
+            description: Command description (defaults to function docstring)
+            category: Command category
+            usage: Optional usage string
+            help_text: Optional help text
+            completer: Optional completion provider or factory
+            condition: Optional predicate to check command availability
+            visible: Optional predicate to check command visibility
+
+        Example:
+            ```python
+            async def handle_external(ctx, args, kwargs):
+                await external_system.execute(args, kwargs)
+
+            cmd = Command.from_raw(handle_external, name="external")
+            ```
+        """
+
+        # Simple wrapper - execute() handles awaitable detection
+        def wrapper(ctx: CommandContext[Any], *args: str, **kwargs: str) -> Any:
+            return func(ctx, list(args), kwargs)
+
+        # Preserve metadata for name/description inference
+        wrapper.__name__ = func.__name__
+        wrapper.__doc__ = func.__doc__
+
+        return cls(
+            wrapper,
+            name=name,
+            description=description,
+            category=category,
+            usage=usage,
+            help_text=help_text,
+            completer=completer,
+            condition=condition,
+            visible=visible,
+        )
+
     def get_completer(self) -> CompletionProvider | None:
         """Get completion provider."""
         match self._completer:
@@ -331,8 +390,25 @@ def parse_args(
         parameters_for_matching = parameters
         call_args = []
 
-    # Get required and optional parameters in order
-    param_list = list(parameters_for_matching.items())
+    # Check for variadic parameters (*args, **kwargs)
+    has_var_positional = any(
+        p.kind == inspect.Parameter.VAR_POSITIONAL for p in parameters_for_matching.values()
+    )
+    has_var_keyword = any(
+        p.kind == inspect.Parameter.VAR_KEYWORD for p in parameters_for_matching.values()
+    )
+
+    # If function accepts *args and **kwargs, just pass everything through
+    if has_var_positional and has_var_keyword:
+        call_args.extend(args)
+        return call_args
+
+    # Get required and optional parameters in order (excluding VAR_POSITIONAL/VAR_KEYWORD)
+    param_list = [
+        (name, param)
+        for name, param in parameters_for_matching.items()
+        if param.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
+    ]
     required = [name for name, param in param_list if param.default == inspect.Parameter.empty]
 
     # Check for too many positional arguments
