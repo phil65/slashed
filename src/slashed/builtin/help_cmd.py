@@ -21,10 +21,14 @@ class HelpCommand(SlashedCommand):
     """Display help information about commands.
 
     Usage:
-      /help           List all available commands
-      /help <command> Show detailed help for a command
+      /help                     List all available commands
+      /help <command>           Show detailed help for a command
+      /help --search=<term>     Filter commands by search term
+      /help --category=<cat>    Filter commands by category
 
     Example: /help exit
+    Example: /help --search=file
+    Example: /help --category=system
     """
 
     name = "help"
@@ -44,6 +48,9 @@ class HelpCommand(SlashedCommand):
         self,
         ctx: CommandContext[Any],
         command: str | None = None,
+        *,
+        search: str | None = None,
+        category: str | None = None,
     ) -> None:
         """Show available commands or detailed help for a specific command."""
         store = ctx.command_store
@@ -70,12 +77,47 @@ class HelpCommand(SlashedCommand):
         else:
             # List all commands grouped by category
             categories = store.get_commands_by_category()
-            output_lines.append("\n## Available commands:")
-            for category, commands in categories.items():
-                output_lines.extend([
-                    f"\n{category.title()}:",
-                    *[f"  /{cmd.name:<16} - *{cmd.description}*" for cmd in commands],
-                ])
+
+            # Apply filters
+            if category:
+                category_lower = category.lower()
+                categories = {k: v for k, v in categories.items() if k.lower() == category_lower}
+
+            if search:
+                search_lower = search.lower()
+                filtered_categories: dict[str, list[Any]] = {}
+                for cat, commands in categories.items():
+                    matching = [
+                        cmd
+                        for cmd in commands
+                        if search_lower in cmd.name.lower()
+                        or search_lower in cmd.description.lower()
+                    ]
+                    if matching:
+                        filtered_categories[cat] = matching
+                categories = filtered_categories
+
+            if not categories:
+                if search and category:
+                    output_lines.append(
+                        f"No commands found matching '{search}' in category '{category}'"
+                    )
+                elif search:
+                    output_lines.append(f"No commands found matching '{search}'")
+                elif category:
+                    output_lines.append(f"No commands found in category '{category}'")
+            else:
+                header = "## Available commands"
+                if search:
+                    header += f" (matching '{search}')"
+                if category:
+                    header += f" (category: {category})"
+                output_lines.append(f"\n{header}:")
+                for cat, commands in categories.items():
+                    output_lines.extend([
+                        f"\n{cat.title()}:",
+                        *[f"  /{cmd.name:<16} - *{cmd.description}*" for cmd in commands],
+                    ])
 
         await ctx.print("\n\n".join(output_lines))
 
