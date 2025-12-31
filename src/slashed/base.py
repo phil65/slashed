@@ -238,8 +238,8 @@ class Command[TContext = Any](BaseCommand):
         args = args or []
         kwargs = kwargs or {}
 
-        call_args = parse_args(self._execute_func, ctx, args, kwargs)
-        result = self._execute_func(*call_args, **kwargs)
+        call_args, coerced_kwargs = parse_args(self._execute_func, ctx, args, kwargs)
+        result = self._execute_func(*call_args, **coerced_kwargs)
 
         if inspect.isawaitable(result):
             return await result
@@ -351,6 +351,51 @@ def extract_usage_params(func: Callable[..., Any], *, skip_first: bool = False) 
     return usage_params
 
 
+def _coerce_value(value: str, annotation: Any, param_name: str) -> Any:
+    """Coerce a string value to its annotated type.
+
+    Args:
+        value: String value from command line
+        annotation: Type annotation from function signature
+        param_name: Parameter name (for error messages)
+
+    Returns:
+        Converted value, or original string if no conversion needed/possible
+
+    Raises:
+        CommandError: If conversion fails
+    """
+    # No annotation or already not a string
+    if annotation is inspect.Parameter.empty or not isinstance(value, str):
+        return value
+
+    # Handle Optional/Union types - extract the non-None type
+    origin = getattr(annotation, "__origin__", None)
+    if origin is type(None):
+        return value
+
+    # For Union types (including Optional), try the first non-None type
+    if origin is not None:
+        type_args = getattr(annotation, "__args__", ())
+        non_none_types = [t for t in type_args if t is not type(None)]
+        if non_none_types:
+            annotation = non_none_types[0]
+
+    try:
+        # Handle basic types
+        if annotation is int:
+            return int(value)
+        if annotation is float:
+            return float(value)
+        if annotation is bool:
+            return value.lower() in ("true", "1", "yes", "on")
+        # For str, Literal types, or other complex types, return as-is
+    except (ValueError, TypeError) as e:
+        msg = f"Cannot convert '{value}' to {annotation.__name__} for parameter '{param_name}': {e}"
+        raise CommandError(msg) from e
+    return value
+
+
 def parse_args(
     func: Callable[..., Any],
     ctx: CommandContext[Any],
@@ -358,8 +403,8 @@ def parse_args(
     kwargs: dict[str, str],
     *,
     skip_first: bool = False,
-) -> list[str | CommandContext[Any]]:
-    """Parse parameters and return a list of positional arguments.
+) -> tuple[list[Any], dict[str, Any]]:
+    """Parse parameters and return positional and keyword arguments with type coercion.
 
     Args:
         func: The function to parse arguments for
@@ -369,7 +414,7 @@ def parse_args(
         skip_first: If True, skip the first parameter (for methods with 'self')
 
     Returns:
-        List of positional arguments to pass to the function
+        Tuple of (positional_args, keyword_args) with values coerced to annotated types
     """
     sig = inspect.signature(func)
     params_list = list(sig.parameters.items())
@@ -401,7 +446,7 @@ def parse_args(
     # If function accepts *args and **kwargs, just pass everything through
     if has_var_positional and has_var_keyword:
         call_args.extend(args)
-        return call_args
+        return call_args, kwargs
 
     # Get required and optional parameters in order (excluding VAR_POSITIONAL/VAR_KEYWORD)
     param_list = [
@@ -443,9 +488,27 @@ def parse_args(
             msg = f"Unknown argument: {name}"
             raise CommandError(msg)
 
-    # Add positional arguments
-    call_args.extend(args)
-    return call_args
+    # Coerce positional arguments to their annotated types
+    coerced_args: list[Any] = []
+    for idx, arg_value in enumerate(args):
+        if idx < len(param_list):
+            param_name, param = param_list[idx]
+            coerced_args.append(_coerce_value(arg_value, param.annotation, param_name))
+        else:
+            coerced_args.append(arg_value)
+
+    # Coerce keyword arguments to their annotated types
+    coerced_kwargs: dict[str, Any] = {}
+    for name, value in kwargs.items():
+        if name in parameters_for_matching:
+            param = parameters_for_matching[name]
+            coerced_kwargs[name] = _coerce_value(value, param.annotation, name)
+        else:
+            coerced_kwargs[name] = value
+
+    # Add positional arguments and kwargs
+    call_args.extend(coerced_args)
+    return call_args, coerced_kwargs
 
 
 def _is_context_param(param_name: str, func: Callable[..., Any] | None = None) -> bool:

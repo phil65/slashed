@@ -111,5 +111,5 @@ class SlashedCommand(BaseCommand):
     ) -> Any:
         """Execute command by binding command-line arguments to method parameters."""
         method = type(self).execute_command
-        call_args = parse_args(method, ctx, args, kwargs, skip_first=True)
-        return await self.execute_command(*call_args, **kwargs)
+        call_args, coerced_kwargs = parse_args(method, ctx, args, kwargs, skip_first=True)
+        return await self.execute_command(*call_args, **coerced_kwargs)
