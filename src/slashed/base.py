@@ -382,16 +382,21 @@ def _coerce_value(value: str, annotation: Any, param_name: str) -> Any:
             annotation = non_none_types[0]
 
     try:
-        # Handle basic types
-        if annotation is int:
+        # Handle basic types (check both type and string annotation for PEP 563 compatibility)
+        if annotation is int or annotation == "int":
             return int(value)
-        if annotation is float:
+        if annotation is float or annotation == "float":
             return float(value)
-        if annotation is bool:
+        if annotation is bool or annotation == "bool":
             return value.lower() in ("true", "1", "yes", "on")
         # For str, Literal types, or other complex types, return as-is
     except (ValueError, TypeError) as e:
-        msg = f"Cannot convert '{value}' to {annotation.__name__} for parameter '{param_name}': {e}"
+        ann_name = (
+            annotation
+            if isinstance(annotation, str)
+            else getattr(annotation, "__name__", str(annotation))
+        )
+        msg = f"Cannot convert '{value}' to {ann_name} for parameter '{param_name}': {e}"
         raise CommandError(msg) from e
     return value
 
@@ -448,53 +453,83 @@ def parse_args(
         call_args.extend(args)
         return call_args, kwargs
 
-    # Get required and optional parameters in order (excluding VAR_POSITIONAL/VAR_KEYWORD)
-    param_list = [
-        (name, param)
-        for name, param in parameters_for_matching.items()
-        if param.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
-    ]
-    required = [name for name, param in param_list if param.default == inspect.Parameter.empty]
+    # Get parameters BEFORE VAR_POSITIONAL (regular positional params)
+    # and parameters AFTER VAR_POSITIONAL (keyword-only params)
+    pre_var_positional: list[tuple[str, inspect.Parameter]] = []
+    post_var_positional: list[tuple[str, inspect.Parameter]] = []
+    found_var_positional = False
 
-    # Check for too many positional arguments
-    max_positional = len(param_list)
-    if len(args) > max_positional:
-        param_names_list = [name for name, _ in param_list]
-        msg = (
-            f"Too many positional arguments. Expected at most {max_positional} "
-            f"({param_names_list}), got {len(args)}"
-        )
-        raise CommandError(msg)
+    for name, param in parameters_for_matching.items():
+        if param.kind == inspect.Parameter.VAR_POSITIONAL:
+            found_var_positional = True
+        elif param.kind == inspect.Parameter.VAR_KEYWORD:
+            continue  # Skip **kwargs
+        elif found_var_positional:
+            post_var_positional.append((name, param))
+        else:
+            pre_var_positional.append((name, param))
 
-    # Check for conflicts between positional and keyword arguments
-    positional_param_names = [name for name, _ in param_list[: len(args)]]
+    # param_list for backwards compatibility - only non-variadic params
+    param_list = pre_var_positional + post_var_positional
+    [name for name, param in param_list if param.default == inspect.Parameter.empty]
+
+    # When there's VAR_POSITIONAL, positional args after the pre_var params go to *args
+    # Only check for too many args if there's no VAR_POSITIONAL
+    if not has_var_positional:
+        max_positional = len(param_list)
+        if len(args) > max_positional:
+            param_names_list = [name for name, _ in param_list]
+            msg = (
+                f"Too many positional arguments. Expected at most {max_positional} "
+                f"({param_names_list}), got {len(args)}"
+            )
+            raise CommandError(msg)
+
+    # Check for conflicts - only for pre_var_positional params
+    # Args beyond pre_var_positional count go to *args, not to keyword-only params
+    num_regular_positional = min(len(args), len(pre_var_positional))
+    positional_param_names = [name for name, _ in pre_var_positional[:num_regular_positional]]
     conflicts = set(positional_param_names) & set(kwargs.keys())
     if conflicts:
         msg = f"Arguments provided both positionally and as keywords: {list(conflicts)}"
         raise CommandError(msg)
 
     # Check if required args are provided either as positional or keyword
-    missing = [
-        name for idx, name in enumerate(required) if name not in kwargs and len(args) < idx + 1
+    # For pre_var_positional params: can be filled by positional args or kwargs
+    # For post_var_positional params (keyword-only): MUST be provided as kwargs
+    required_pre = [name for name, p in pre_var_positional if p.default == inspect.Parameter.empty]
+    required_post = [
+        name for name, p in post_var_positional if p.default == inspect.Parameter.empty
     ]
+
+    missing_pre = [
+        name for idx, name in enumerate(required_pre) if name not in kwargs and len(args) <= idx
+    ]
+    missing_post = [name for name in required_post if name not in kwargs]
+    missing = missing_pre + missing_post
 
     if missing:
         msg = f"Missing required arguments: {missing}"
         raise CommandError(msg)
 
-    # Validate keyword arguments exist in signature
-    for name in kwargs:
-        if name not in parameters_for_matching:
-            msg = f"Unknown argument: {name}"
-            raise CommandError(msg)
+    # Validate keyword arguments exist in signature (skip if function has **kwargs)
+    if not has_var_keyword:
+        for name in kwargs:
+            if name not in parameters_for_matching:
+                msg = f"Unknown argument: {name}"
+                raise CommandError(msg)
 
     # Coerce positional arguments to their annotated types
+    # When there's VAR_POSITIONAL, only args up to pre_var_positional count get coerced
+    # to named params. The rest go directly to *args.
     coerced_args: list[Any] = []
+    coercible_params = pre_var_positional if has_var_positional else param_list
     for idx, arg_value in enumerate(args):
-        if idx < len(param_list):
-            param_name, param = param_list[idx]
+        if idx < len(coercible_params):
+            param_name, param = coercible_params[idx]
             coerced_args.append(_coerce_value(arg_value, param.annotation, param_name))
         else:
+            # Extra args - either go to *args or were already caught as too many
             coerced_args.append(arg_value)
 
     # Coerce keyword arguments to their annotated types
