@@ -239,14 +239,21 @@ class CommandStore:
 
         return await self.execute_command(command_str, ctx)
 
-    def register_command(self, command: type[SlashedCommand] | BaseCommand) -> None:
+    def register_command(
+        self,
+        command: type[SlashedCommand] | BaseCommand,
+        *,
+        replace: bool = False,
+    ) -> None:
         """Register a new command.
 
         Args:
             command: Command class (SlashedCommand subclass) or command instance
+            replace: If True, replace existing command with same name.
+                    If False, raise ValueError if command exists.
 
         Raises:
-            ValueError: If command with same name exists
+            ValueError: If command with same name exists and replace=False
         """
         # If given a class, instantiate it
         if isinstance(command, type):
@@ -254,7 +261,7 @@ class CommandStore:
 
         if not command.is_available():
             return
-        if command.name in self._commands:
+        if command.name in self._commands and not replace:
             msg = f"Command {command.name!r} already registered"
             raise ValueError(msg)
         self._commands[command.name] = command
