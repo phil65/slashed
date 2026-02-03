@@ -132,11 +132,7 @@ class BaseCommand(ABC):
         return True
 
     def get_completer(self) -> CompletionProvider | None:
-        """Get completion provider for this command.
-
-        Returns:
-            CompletionProvider if command supports completion, None otherwise
-        """
+        """Get completion provider for this command if supported."""
         return None
 
     def format_usage(self) -> str | None:
