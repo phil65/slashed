@@ -7,8 +7,9 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 import inspect
 import shlex
-from typing import TYPE_CHECKING, Any, Protocol, get_type_hints
+from typing import TYPE_CHECKING, Annotated, Any, Protocol, get_args, get_origin, get_type_hints
 
+from slashed.annotations import Short
 from slashed.completion import CompletionProvider
 from slashed.events import CommandOutputEvent
 from slashed.exceptions import CommandError
@@ -369,14 +370,19 @@ def _coerce_value(value: str, annotation: Any, param_name: str) -> Any:
     if annotation is inspect.Parameter.empty or not isinstance(value, str):
         return value
 
+    # Unwrap Annotated types to get the actual type
+    origin = get_origin(annotation)
+    if origin is Annotated:
+        annotation = get_args(annotation)[0]  # First arg is the actual type
+        origin = get_origin(annotation)  # Re-check origin for the unwrapped type
+
     # Handle Optional/Union types - extract the non-None type
-    origin = getattr(annotation, "__origin__", None)
     if origin is type(None):
         return value
 
     # For Union types (including Optional), try the first non-None type
     if origin is not None:
-        type_args = getattr(annotation, "__args__", ())
+        type_args = get_args(annotation)
         non_none_types = [t for t in type_args if t is not type(None)]
         if non_none_types:
             annotation = non_none_types[0]
@@ -401,6 +407,74 @@ def _coerce_value(value: str, annotation: Any, param_name: str) -> Any:
     return value
 
 
+def _get_resolved_hints(func: Callable[..., Any]) -> dict[str, Any]:
+    """Get resolved type hints, handling PEP 563 string annotations.
+
+    Args:
+        func: The function to get type hints from
+
+    Returns:
+        Dict mapping parameter names to resolved type hints
+    """
+    try:
+        return get_type_hints(func, include_extras=True)
+    except (TypeError, NameError):
+        # If resolution fails (e.g., unresolvable forward references),
+        # return empty dict - shorthand features won't work but command still runs
+        return {}
+
+
+def _get_shorthand_map(func: Callable[..., Any]) -> dict[str, str]:
+    """Extract shorthand -> full_name mapping from Annotated hints.
+
+    Args:
+        func: The function to extract shorthand mappings from
+
+    Returns:
+        Dict mapping single-char shorthands to full parameter names
+    """
+    mapping: dict[str, str] = {}
+    hints = _get_resolved_hints(func)
+
+    for param_name, hint in hints.items():
+        if get_origin(hint) is Annotated:
+            type_args = get_args(hint)
+            for arg in type_args[1:]:  # Skip the actual type (first arg)
+                if isinstance(arg, Short):
+                    mapping[arg.char] = param_name
+                    break  # Only one Short per parameter
+    return mapping
+
+
+def _expand_shorthand_kwargs(
+    kwargs: dict[str, str],
+    shorthand_map: dict[str, str],
+) -> dict[str, str]:
+    """Expand shorthand keys in kwargs to full parameter names.
+
+    Args:
+        kwargs: Original kwargs (may contain single-char keys)
+        shorthand_map: Mapping from shorthand to full name
+
+    Returns:
+        New kwargs dict with expanded keys
+
+    Raises:
+        CommandError: If shorthand and full name both provided
+    """
+    expanded: dict[str, str] = {}
+    for key, value in kwargs.items():
+        if len(key) == 1 and key in shorthand_map:
+            full_name = shorthand_map[key]
+            if full_name in kwargs:
+                msg = f"Argument '{full_name}' provided both as '-{key}' and '--{full_name}'"
+                raise CommandError(msg)
+            expanded[full_name] = value
+        else:
+            expanded[key] = value
+    return expanded
+
+
 def parse_args(
     func: Callable[..., Any],
     ctx: CommandContext[Any],
@@ -421,6 +495,13 @@ def parse_args(
     Returns:
         Tuple of (positional_args, keyword_args) with values coerced to annotated types
     """
+    # Get resolved type hints (handles 'from __future__ import annotations' and Annotated)
+    type_hints = _get_resolved_hints(func)
+
+    # Expand shorthand kwargs (e.g., -v -> --verbose) using Annotated[..., Short("v")]
+    shorthand_map = _get_shorthand_map(func)
+    kwargs = _expand_shorthand_kwargs(kwargs, shorthand_map)
+
     sig = inspect.signature(func)
     params_list = list(sig.parameters.items())
     if skip_first and params_list:
@@ -526,8 +607,9 @@ def parse_args(
     coercible_params = pre_var_positional if has_var_positional else param_list
     for idx, arg_value in enumerate(args):
         if idx < len(coercible_params):
-            param_name, param = coercible_params[idx]
-            coerced_args.append(_coerce_value(arg_value, param.annotation, param_name))
+            param_name, _param = coercible_params[idx]
+            annotation = type_hints.get(param_name, inspect.Parameter.empty)
+            coerced_args.append(_coerce_value(arg_value, annotation, param_name))
         else:
             # Extra args - either go to *args or were already caught as too many
             coerced_args.append(arg_value)
@@ -536,8 +618,8 @@ def parse_args(
     coerced_kwargs: dict[str, Any] = {}
     for name, value in kwargs.items():
         if name in parameters_for_matching:
-            param = parameters_for_matching[name]
-            coerced_kwargs[name] = _coerce_value(value, param.annotation, name)
+            annotation = type_hints.get(name, inspect.Parameter.empty)
+            coerced_kwargs[name] = _coerce_value(value, annotation, name)
         else:
             coerced_kwargs[name] = value
 
@@ -599,8 +681,17 @@ def parse_command(cmd_str: str) -> ParsedCommand:
     while i < len(parts):
         part = parts[i]
         if part.startswith("--"):
+            # Long-form argument: --name value
             if i + 1 < len(parts):
                 kwargs[part[2:]] = parts[i + 1]
+                i += 2
+            else:
+                msg = f"Missing value for argument: {part}"
+                raise CommandError(msg)
+        elif part.startswith("-") and len(part) == 2 and part[1].isalpha():
+            # Short-form argument: -x value
+            if i + 1 < len(parts):
+                kwargs[part[1:]] = parts[i + 1]  # Store with single char key
                 i += 2
             else:
                 msg = f"Missing value for argument: {part}"

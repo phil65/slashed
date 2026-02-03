@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from typing import Annotated
+
 import pytest
 
+from slashed.annotations import Short
 from slashed.base import CommandContext
 from slashed.commands import SlashedCommand
 from slashed.exceptions import CommandError
@@ -216,3 +219,52 @@ def test_inheritance():
     assert base.category == "test"
     assert child.name == "child"
     assert child.category == "test"
+
+
+class ShorthandCommand(SlashedCommand):
+    """Command with shorthand argument support for testing."""
+
+    name = "shorthand"
+    bound_args: dict | None = None
+
+    async def execute_command(
+        self,
+        ctx: CommandContext,
+        name: str,
+        verbose: Annotated[bool, Short("v")] = False,
+        output: Annotated[str, Short("o")] = "stdout",
+    ):
+        self.bound_args = {
+            "name": name,
+            "verbose": verbose,
+            "output": output,
+        }
+
+
+async def test_shorthand_args(context):
+    """Test shorthand argument support with Annotated[..., Short(...)]."""
+    cmd = ShorthandCommand()
+
+    # Test with shorthand args
+    await cmd.execute(context, ["test"], {"v": "true", "o": "file.txt"})
+    assert cmd.bound_args == {
+        "name": "test",
+        "verbose": True,
+        "output": "file.txt",
+    }
+
+    # Test with long-form args
+    await cmd.execute(context, ["test"], {"verbose": "false", "output": "stderr"})
+    assert cmd.bound_args == {
+        "name": "test",
+        "verbose": False,
+        "output": "stderr",
+    }
+
+    # Test mixed
+    await cmd.execute(context, ["test"], {"v": "true", "output": "mixed"})
+    assert cmd.bound_args == {
+        "name": "test",
+        "verbose": True,
+        "output": "mixed",
+    }

@@ -16,6 +16,7 @@ __copyright__ = "Copyright (c) 2024 Philipp Temminghoff"
 __license__ = "MIT"
 __url__ = "https://github.com/phil65/slashed"
 
+from slashed.annotations import Short
 from slashed.base import (
     BaseCommand,
     Command,
@@ -50,6 +51,7 @@ from slashed.registry import CommandRegistry
 
 __all__ = [  # noqa: RUF022
     # Core
+    "Short",
     "BaseCommand",
     "Command",
     "CommandContext",

@@ -2,17 +2,14 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import Annotated
 
 import pytest
 
-from slashed.base import parse_args
+from slashed.annotations import Short
+from slashed.base import CommandContext, parse_args, parse_command
 from slashed.exceptions import CommandError
 from slashed.store import CommandStore
-
-
-if TYPE_CHECKING:
-    from slashed.base import CommandContext
 
 
 @pytest.fixture
@@ -25,6 +22,27 @@ def store() -> CommandStore:
 def context(store: CommandStore) -> CommandContext[None]:
     """Fixture providing command context."""
     return store.create_context(None)
+
+
+# Module-level test functions for shorthand tests
+# (needed because get_type_hints requires proper __globals__)
+def _shorthand_func_basic(name: str, verbose: Annotated[bool, Short("v")] = False):
+    pass
+
+
+def _shorthand_func_multiple(
+    verbose: Annotated[bool, Short("v")] = False,
+    output: Annotated[str, Short("o")] = "stdout",
+):
+    pass
+
+
+def _shorthand_func_with_context(ctx: CommandContext, verbose: Annotated[bool, Short("v")] = False):
+    pass
+
+
+def _shorthand_func_int(count: Annotated[int, Short("c")] = 1):
+    pass
 
 
 class TestParseArgsBasic:
@@ -289,3 +307,111 @@ class TestParseArgsTypeCoercion:
         assert call_args == ["a", "b"]
         assert call_kwargs == {"count": 5}
         assert isinstance(call_kwargs["count"], int)
+
+
+class TestShorthandArgs:
+    """Tests for shorthand argument support via Annotated[..., Short(...)]."""
+
+    def test_shorthand_expansion(self, context: CommandContext):
+        """Test that -v expands to --verbose when Short('v') is used."""
+        call_args, call_kwargs = parse_args(_shorthand_func_basic, context, ["test"], {"v": "true"})
+        assert call_args == ["test"]
+        assert call_kwargs == {"verbose": True}
+
+    def test_shorthand_multiple(self, context: CommandContext):
+        """Test multiple shorthand parameters."""
+        call_args, call_kwargs = parse_args(
+            _shorthand_func_multiple, context, [], {"v": "true", "o": "file.txt"}
+        )
+        assert call_args == []
+        assert call_kwargs == {"verbose": True, "output": "file.txt"}
+
+    def test_shorthand_with_long_form(self, context: CommandContext):
+        """Test that long form still works alongside shorthand definition."""
+        call_args, call_kwargs = parse_args(
+            _shorthand_func_basic, context, ["test"], {"verbose": "true"}
+        )
+        assert call_args == ["test"]
+        assert call_kwargs == {"verbose": True}
+
+    def test_shorthand_conflict_error(self, context: CommandContext):
+        """Test error when both shorthand and long form provided."""
+        with pytest.raises(CommandError, match="provided both as '-v' and '--verbose'"):
+            parse_args(_shorthand_func_basic, context, [], {"v": "true", "verbose": "false"})
+
+    def test_shorthand_with_context(self, context: CommandContext):
+        """Test shorthand works with context parameter."""
+        call_args, call_kwargs = parse_args(
+            _shorthand_func_with_context, context, [], {"v": "true"}
+        )
+        assert call_args[0] is context
+        assert call_kwargs == {"verbose": True}
+
+    def test_shorthand_with_positional(self, context: CommandContext):
+        """Test shorthand works with positional arguments."""
+        call_args, call_kwargs = parse_args(_shorthand_func_basic, context, ["test"], {"v": "true"})
+        assert call_args == ["test"]
+        assert call_kwargs == {"verbose": True}
+
+    def test_shorthand_type_coercion(self, context: CommandContext):
+        """Test that type coercion works with shorthand."""
+        call_args, call_kwargs = parse_args(_shorthand_func_int, context, [], {"c": "42"})
+        assert call_kwargs == {"count": 42}
+        assert isinstance(call_kwargs["count"], int)
+
+    def test_no_shorthand_single_char_passes_through(self, context: CommandContext):
+        """Test that single-char kwargs without Short annotation pass through."""
+
+        def func(**kwargs):
+            pass
+
+        # No Short annotation, so "v" stays as "v"
+        call_args, call_kwargs = parse_args(func, context, [], {"v": "value"})
+        assert call_kwargs == {"v": "value"}
+
+
+class TestParseCommandShorthand:
+    """Tests for shorthand parsing in parse_command."""
+
+    def test_parse_short_flag(self):
+        """Test that -x value is parsed correctly."""
+        parsed = parse_command("cmd -v true")
+        assert parsed.name == "cmd"
+        assert parsed.args.args == []
+        assert parsed.args.kwargs == {"v": "true"}
+
+    def test_parse_multiple_short_flags(self):
+        """Test multiple short flags."""
+        parsed = parse_command("cmd -v true -o output.txt")
+        assert parsed.name == "cmd"
+        assert parsed.args.kwargs == {"v": "true", "o": "output.txt"}
+
+    def test_parse_mixed_short_and_long(self):
+        """Test mixing short and long form arguments."""
+        parsed = parse_command("cmd -v true --output file.txt")
+        assert parsed.name == "cmd"
+        assert parsed.args.kwargs == {"v": "true", "output": "file.txt"}
+
+    def test_parse_short_with_positional(self):
+        """Test short flags with positional arguments."""
+        parsed = parse_command("cmd arg1 -v true arg2")
+        assert parsed.name == "cmd"
+        assert parsed.args.args == ["arg1", "arg2"]
+        assert parsed.args.kwargs == {"v": "true"}
+
+    def test_parse_short_missing_value(self):
+        """Test error when short flag missing value."""
+        with pytest.raises(CommandError, match="Missing value for argument: -v"):
+            parse_command("cmd -v")
+
+    def test_parse_numeric_not_short_flag(self):
+        """Test that -1 is treated as positional, not a flag."""
+        parsed = parse_command("cmd -1")
+        assert parsed.args.args == ["-1"]
+        assert parsed.args.kwargs == {}
+
+    def test_parse_long_dash_not_short_flag(self):
+        """Test that multi-char after dash is positional."""
+        parsed = parse_command("cmd -abc")
+        assert parsed.args.args == ["-abc"]
+        assert parsed.args.kwargs == {}
