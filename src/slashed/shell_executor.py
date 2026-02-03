@@ -64,7 +64,7 @@ class ShellExecutor:
         """
         try:
             parts = bashlex.parse(command_line)
-        except bashlex.errors.ParsingError as e:
+        except bashlex.errors.ParsingError as e:  # pyright: ignore[reportAttributeAccessIssue]
             return CommandResult(stderr=f"Parse error: {e}", exit_code=1)
 
         if not parts:
@@ -91,7 +91,7 @@ class ShellExecutor:
         Returns:
             Result of execution
         """
-        match node.kind:
+        match node.kind:  # pyright: ignore[reportAttributeAccessIssue]
             case "command":
                 return await self._execute_command(node, ctx)
             case "pipeline":
@@ -106,7 +106,7 @@ class ShellExecutor:
                 )
             case _:
                 return CommandResult(
-                    stderr=f"Unknown node kind: {node.kind}",
+                    stderr=f"Unknown node kind: {node.kind}",  # pyright: ignore[reportAttributeAccessIssue]
                     exit_code=1,
                 )
 
@@ -126,13 +126,13 @@ class ShellExecutor:
         """
         # Extract words from the command (skip redirections, assignments for now)
         words: list[str] = []
-        for part in node.parts:
-            if part.kind == "word":
-                words.append(part.word)
+        for part in node.parts:  # pyright: ignore[reportAttributeAccessIssue]
+            if part.kind == "word":  # pyright: ignore[reportAttributeAccessIssue]
+                words.append(part.word)  # pyright: ignore[reportAttributeAccessIssue]
             elif part.kind == "redirect":
                 # TODO: Handle redirections
                 pass
-            elif part.kind == "assignment":
+            elif part.kind == "assignment":  # pyright: ignore[reportAttributeAccessIssue]
                 # TODO: Handle assignments
                 pass
 
@@ -198,7 +198,7 @@ class ShellExecutor:
             Result of the last command in pipeline
         """
         # Extract commands from pipeline (skip pipe operators)
-        commands = [p for p in node.parts if p.kind == "command"]
+        commands = [p for p in node.parts if p.kind == "command"]  # pyright: ignore[reportAttributeAccessIssue]
 
         if not commands:
             return CommandResult()
@@ -247,9 +247,9 @@ class ShellExecutor:
         result = CommandResult()
         pending_operator: str | None = None
 
-        for part in node.parts:
-            if part.kind == "operator":
-                pending_operator = part.op
+        for part in node.parts:  # pyright: ignore[reportAttributeAccessIssue]
+            if part.kind == "operator":  # pyright: ignore[reportAttributeAccessIssue]
+                pending_operator = part.op  # pyright: ignore[reportAttributeAccessIssue]
             elif part.kind in ("command", "pipeline"):
                 # Check if we should execute based on previous result and operator
                 should_execute = True
@@ -263,7 +263,7 @@ class ShellExecutor:
                 # For ";" or None, always execute
 
                 if should_execute:
-                    if part.kind == "command":
+                    if part.kind == "command":  # pyright: ignore[reportAttributeAccessIssue]
                         result = await self._execute_command(part, ctx)
                     else:
                         result = await self._execute_pipeline(part, ctx)
