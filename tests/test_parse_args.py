@@ -7,7 +7,7 @@ from typing import Annotated
 import pytest
 
 from slashed.annotations import Short
-from slashed.base import CommandContext, parse_args, parse_command
+from slashed.base import CommandContext, parse_args, parse_command  # noqa: TC001
 from slashed.exceptions import CommandError
 from slashed.store import CommandStore
 
@@ -355,7 +355,7 @@ class TestShorthandArgs:
 
     def test_shorthand_type_coercion(self, context: CommandContext):
         """Test that type coercion works with shorthand."""
-        call_args, call_kwargs = parse_args(_shorthand_func_int, context, [], {"c": "42"})
+        _call_args, call_kwargs = parse_args(_shorthand_func_int, context, [], {"c": "42"})
         assert call_kwargs == {"count": 42}
         assert isinstance(call_kwargs["count"], int)
 
@@ -366,7 +366,7 @@ class TestShorthandArgs:
             pass
 
         # No Short annotation, so "v" stays as "v"
-        call_args, call_kwargs = parse_args(func, context, [], {"v": "value"})
+        _call_args, call_kwargs = parse_args(func, context, [], {"v": "value"})
         assert call_kwargs == {"v": "value"}
 
 

@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from prompt_toolkit.document import Document
     from psygnal.containers._evented_dict import DictEvents
 
-    from slashed.base import OutputWriter
+    from slashed.base import CommandResult, OutputWriter
     from slashed.commands import SlashedCommand
     from slashed.completion import CompletionProvider
     from slashed.events import CommandStoreEventHandler
@@ -438,6 +438,67 @@ class CommandStore:
             metadata=metadata,
         )
         return await self.execute_command(command_str, ctx)
+
+    async def execute_shell[TContextData](
+        self,
+        command_line: str,
+        ctx: CommandContext[TContextData],
+    ) -> CommandResult:
+        """Execute a shell-like command line with pipes and chaining.
+
+        This method supports bash-like syntax:
+        - Pipes: cmd1 | cmd2 | cmd3
+        - AND chaining: cmd1 && cmd2 (run cmd2 only if cmd1 succeeds)
+        - OR chaining: cmd1 || cmd2 (run cmd2 only if cmd1 fails)
+        - Sequential: cmd1 ; cmd2 (run both regardless)
+
+        Args:
+            command_line: Full command line (may contain |, &&, ||, ;)
+            ctx: Command execution context
+
+        Returns:
+            CommandResult with stdout, stderr, and exit_code
+
+        Example:
+            ```python
+            result = await store.execute_shell(
+                "cat data.txt | grep error | head -5",
+                ctx,
+            )
+            print(result.stdout)  # First 5 lines containing 'error'
+            ```
+        """
+        from slashed.shell_executor import ShellExecutor
+
+        executor = ShellExecutor(self)
+        return await executor.execute(command_line, ctx)
+
+    async def execute_shell_with_context[T](
+        self,
+        command_line: str,
+        context: T | None = None,
+        output_writer: OutputWriter | Callable[..., Any] | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> CommandResult:
+        """Execute a shell-like command line with a custom context.
+
+        Convenience method that creates a context and executes the command line.
+
+        Args:
+            command_line: Full command line (may contain |, &&, ||, ;)
+            context: Custom context data
+            output_writer: Optional custom output writer
+            metadata: Additional metadata
+
+        Returns:
+            CommandResult with stdout, stderr, and exit_code
+        """
+        ctx = self.create_context(
+            context,
+            output_writer=output_writer,
+            metadata=metadata,
+        )
+        return await self.execute_shell(command_line, ctx)
 
     def register_builtin_commands(self) -> None:
         """Register default system commands."""

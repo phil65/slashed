@@ -32,6 +32,28 @@ class OutputWriter(Protocol):
 
 
 @dataclass
+class CommandResult:
+    """Result from command execution.
+
+    This represents the output of a command that can be piped to another command.
+    Separate from ctx.print() which is for user-facing status messages.
+
+    Attributes:
+        stdout: Standard output (data that can be piped)
+        stderr: Standard error (error messages)
+        exit_code: Exit code (0 = success, non-zero = failure)
+    """
+
+    stdout: str = ""
+    stderr: str = ""
+    exit_code: int = 0
+
+    def __bool__(self) -> bool:
+        """Return True if command succeeded (exit_code == 0)."""
+        return self.exit_code == 0
+
+
+@dataclass
 class CommandContext[TData]:
     """Context passed to command handlers.
 
@@ -44,6 +66,7 @@ class CommandContext[TData]:
     data: TData | None
     command_store: CommandStore
     metadata: dict[str, Any] = field(default_factory=dict)
+    stdin: str = ""  # Input from pipe (previous command's stdout)
 
     async def print(self, message: str) -> None:
         """Write a message to output."""
@@ -684,7 +707,7 @@ def parse_command(cmd_str: str) -> ParsedCommand:
             else:
                 msg = f"Missing value for argument: {part}"
                 raise CommandError(msg)
-        elif part.startswith("-") and len(part) == 2 and part[1].isalpha():
+        elif part.startswith("-") and len(part) == 2 and part[1].isalpha():  # noqa: PLR2004
             # Short-form argument: -x value
             if i + 1 < len(parts):
                 kwargs[part[1:]] = parts[i + 1]  # Store with single char key

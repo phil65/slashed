@@ -21,6 +21,7 @@ from slashed.base import (
     BaseCommand,
     Command,
     CommandContext,
+    CommandResult,
     OutputWriter,
     ParsedCommand,
     ParsedCommandArgs,
@@ -45,6 +46,7 @@ from slashed.output import (
     CallbackOutputWriter,
     TransformOutputWriter,
 )
+from slashed.shell_executor import ShellExecutor
 from slashed.store import CommandStore
 from slashed.registry import CommandRegistry
 
@@ -55,7 +57,9 @@ __all__ = [  # noqa: RUF022
     "BaseCommand",
     "Command",
     "CommandContext",
+    "CommandResult",
     "CommandRouter",
+    "ShellExecutor",
     "Route",
     "RouteInfo",
     "ParsedRoute",
