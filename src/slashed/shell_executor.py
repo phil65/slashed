@@ -141,15 +141,11 @@ class ShellExecutor:
 
         cmd_name = words[0]
         raw_args = words[1:]
-
         # Get the command
         command = self.store.get_command(cmd_name)
         if not command:
-            return CommandResult(
-                stderr=f"Unknown command: {cmd_name}",
-                exit_code=127,  # Standard "command not found" exit code
-            )
-
+            stderr = f"Unknown command: {cmd_name}"
+            return CommandResult(stderr=stderr, exit_code=127)  # std "command not found" exit code
         # Parse arguments into positional args and kwargs
         # bashlex already did the shell parsing, now we just need to
         # separate --flag value pairs from positional arguments
@@ -177,7 +173,7 @@ class ShellExecutor:
         # Execute with stdin from context
         try:
             result = await command.execute(ctx, args, kwargs)
-            return self._normalize_result(result)
+            return _normalize_result(result)
         except CommandError as e:
             return CommandResult(stderr=str(e), exit_code=1)
         except Exception as e:  # noqa: BLE001
@@ -199,21 +195,17 @@ class ShellExecutor:
         """
         # Extract commands from pipeline (skip pipe operators)
         commands = [p for p in node.parts if p.kind == "command"]  # pyright: ignore[reportAttributeAccessIssue]
-
         if not commands:
             return CommandResult()
 
         # Execute pipeline, threading stdout through stdin
         current_stdin = ctx.stdin
         result = CommandResult()
-
         for i, cmd in enumerate(commands):
             # Create context with current stdin
             pipe_ctx = replace(ctx, stdin=current_stdin)
-
             # Execute command
             result = await self._execute_command(cmd, pipe_ctx)
-
             # If not the last command, use stdout as next stdin
             if i < len(commands) - 1:
                 current_stdin = result.stdout
@@ -283,22 +275,23 @@ class ShellExecutor:
             exit_code=result.exit_code,  # Exit code of last executed command
         )
 
-    def _normalize_result(self, result: Any) -> CommandResult:
-        """Normalize command return value to CommandResult.
 
-        Args:
-            result: Return value from command execution
+def _normalize_result(result: Any) -> CommandResult:
+    """Normalize command return value to CommandResult.
 
-        Returns:
-            Normalized CommandResult
-        """
-        if result is None:
-            return CommandResult()
-        if isinstance(result, CommandResult):
-            return result
-        if isinstance(result, str):
-            return CommandResult(stdout=result)
-        if isinstance(result, int):
-            return CommandResult(exit_code=result)
-        # For other types, convert to string
-        return CommandResult(stdout=str(result))
+    Args:
+        result: Return value from command execution
+
+    Returns:
+        Normalized CommandResult
+    """
+    if result is None:
+        return CommandResult()
+    if isinstance(result, CommandResult):
+        return result
+    if isinstance(result, str):
+        return CommandResult(stdout=result)
+    if isinstance(result, int):
+        return CommandResult(exit_code=result)
+    # For other types, convert to string
+    return CommandResult(stdout=str(result))
