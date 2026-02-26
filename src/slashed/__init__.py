@@ -49,7 +49,12 @@ from slashed.output import (
 from slashed.shell_executor import ShellExecutor
 from slashed.store import CommandStore
 from slashed.registry import CommandRegistry
-
+from slashed.events import (
+    CommandExecutedEvent,
+    CommandOutputEvent,
+    CommandRegisteredEvent,
+    CommandUnregisteredEvent,
+)
 
 __all__ = [  # noqa: RUF022
     # Core
@@ -63,6 +68,10 @@ __all__ = [  # noqa: RUF022
     "Route",
     "RouteInfo",
     "ParsedRoute",
+    "CommandExecutedEvent",
+    "CommandOutputEvent",
+    "CommandRegisteredEvent",
+    "CommandUnregisteredEvent",
     "CommandError",
     "CommandStore",
     "OutputWriter",
