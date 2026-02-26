@@ -194,7 +194,7 @@ class CommandRouter[TGlobalContext, TRouteContext]:
         """Internal method for initial route parsing."""
         if not command.startswith("@"):
             # No route - check if command is restricted to a route
-            command_name = command.split()[0]
+            command_name = command.split(maxsplit=1)[0]
 
             # If we have an active context, check if it matches any route context
             if self._active_context:
@@ -263,7 +263,7 @@ class CommandRouter[TGlobalContext, TRouteContext]:
             raise CommandError(msg)
 
         # Check if command is restricted to a route
-        command_name = command.split()[0]
+        command_name = command.split(maxsplit=1)[0]
         for route in self._routes.values():
             if route.allowed_commands and command_name in route.allowed_commands:
                 # Command is restricted to a route but no route specified

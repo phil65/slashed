@@ -53,7 +53,7 @@ class SlashedSuggester(Suggester):
         try:
             # If we have a command, use its completer
             if " " in value:  # Has arguments
-                cmd_name = value.split()[0][1:]  # Remove slash
+                cmd_name = value.split(maxsplit=1)[0][1:]  # Remove slash
                 if command := self._store.get_command(cmd_name):  # noqa: SIM102
                     if completer := command.get_completer():
                         current_word = completion_context.current_word
