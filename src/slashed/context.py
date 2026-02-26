@@ -12,8 +12,6 @@ from typing import (
     get_type_hints,
 )
 
-from psygnal.containers import EventedDict
-
 from slashed.base import CommandContext
 from slashed.log import get_logger
 
@@ -69,7 +67,7 @@ class ContextRegistry:
 
     def __init__(self) -> None:
         """Initialize an empty context registry."""
-        self._contexts = EventedDict[type, ContextRegistration[Any]]()
+        self._contexts: dict[type, ContextRegistration[Any]] = {}
 
     def register(
         self,
