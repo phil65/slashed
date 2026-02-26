@@ -28,10 +28,10 @@ from slashed.output import CallbackOutputWriter, DefaultOutputWriter
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
-    import os
 
     from prompt_toolkit.document import Document
     from psygnal.containers._evented_dict import DictEvents
+    from upath.types import JoinablePathLike
 
     from slashed.base import CommandResult, OutputWriter
     from slashed.commands import SlashedCommand
@@ -51,7 +51,7 @@ class CommandStore:
 
     def __init__(
         self,
-        history_file: str | os.PathLike[str] | None = None,
+        history_file: JoinablePathLike | None = None,
         *,
         event_handler: CommandStoreEventHandler | None = None,
         commands: Sequence[type[SlashedCommand] | BaseCommand] | None = None,
