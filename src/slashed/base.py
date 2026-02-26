@@ -226,7 +226,7 @@ class Command[TContext = Any](BaseCommand):
             condition: Optional predicate to check command availability
             visible: Optional predicate to check command visibility in listings
         """
-        self.name = name or execute_func.__name__.replace("_", "-")
+        self.name = name or getattr(execute_func, "__name__", "unknown").replace("_", "-")
         self.description = description or execute_func.__doc__ or "No description"
         self.category = category
         self.usage = usage or _generate_usage(execute_func)
@@ -309,7 +309,7 @@ class Command[TContext = Any](BaseCommand):
             return func(ctx, list(args), kwargs)
 
         # Preserve metadata for name/description inference
-        wrapper.__name__ = func.__name__
+        wrapper.__name__ = getattr(func, "__name__", "unknown")
         wrapper.__doc__ = func.__doc__
 
         return cls(

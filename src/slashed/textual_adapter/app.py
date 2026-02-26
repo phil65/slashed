@@ -186,7 +186,9 @@ class SlashedApp[TContext, TResult](App[TResult]):
             method: Callable[[Any, str], Awaitable[None]],
         ) -> Callable[[Any, str], Awaitable[None]]:
             # Store the handler method name for this class and input
-            cls._command_handlers.setdefault(cls.__name__, {})[input_id] = method.__name__
+            cls._command_handlers.setdefault(cls.__name__, {})[input_id] = getattr(
+                method, "__name__", "unknown"
+            )
             return method
 
         return decorator
