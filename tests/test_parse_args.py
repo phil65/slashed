@@ -7,7 +7,7 @@ from typing import Annotated
 import pytest
 
 from slashed.annotations import Short
-from slashed.base import CommandContext, parse_args, parse_command  # noqa: TC001
+from slashed.base import CommandContext, parse_args, parse_command
 from slashed.exceptions import CommandError
 from slashed.store import CommandStore
 

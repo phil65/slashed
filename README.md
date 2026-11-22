@@ -98,18 +98,16 @@ class GreetCommand(SlashedCommand):
         """
         state = ctx.get_data()  # Type-safe access to app state
         state.greeting_count += 1
-        await ctx.print(
-            f"{greeting}, {name}! "
-            f"(Greeted {state.greeting_count} times)"
-        )
+        await ctx.print(f"{greeting}, {name}! (Greeted {state.greeting_count} times)")
 
     def get_completer(self) -> ChoiceCompleter:
         """Provide name suggestions."""
         return ChoiceCompleter({
             "World": "Default greeting target",
             "Everyone": "Greet all users",
-            "Team": "Greet the team"
+            "Team": "Greet the team",
         })
+
 
 # Create store and register the command
 store = CommandStore()
@@ -131,9 +129,11 @@ Slashed offers two different styles for defining commands, each with its own adv
 ```python
 from slashed import Command, CommandContext
 
+
 def add_worker(ctx: CommandContext, worker_id: str, host: str = "localhost", port: int = 8080):
     """Add a worker to the pool."""
     print(f"Adding worker {worker_id} at {host}:{port}")
+
 
 # Usage string is auto-generated from function signature
 cmd = Command(
@@ -160,6 +160,7 @@ cmd = Command(
 ```python
 from slashed import SlashedCommand, CommandContext
 
+
 class AddWorkerCommand(SlashedCommand):
     """Add a worker to the pool."""
 
@@ -169,9 +170,9 @@ class AddWorkerCommand(SlashedCommand):
     async def execute_command(
         self,
         ctx: CommandContext,
-        worker_id: str,          # required parameter
-        host: str = "localhost", # optional with default
-        port: int = 8080,       # optional with default
+        worker_id: str,  # required parameter
+        host: str = "localhost",  # optional with default
+        port: int = 8080,  # optional with default
     ):
         """Add a new worker to the pool.
 
@@ -260,21 +261,18 @@ from slashed.completers import PathCompleter
 
 registry = CommandRegistry()
 
-@registry.command(
-    category="tools",
-    completer=PathCompleter(files=True)
-)
+
+@registry.command(category="tools", completer=PathCompleter(files=True))
 async def search(ctx: CommandContext, pattern: str):
     """Search for files in current directory."""
     await ctx.print(f"Searching for {pattern}")
 
-@registry.command(
-    category="tools",
-    condition=lambda: find_spec("sqlalchemy") is not None
-)
+
+@registry.command(category="tools", condition=lambda: find_spec("sqlalchemy") is not None)
 async def query(ctx: CommandContext, sql: str):
     """Execute database query."""
     await ctx.print(f"Running query: {sql}")
+
 
 # app.py
 from slashed import CommandStore
@@ -326,9 +324,7 @@ store = CommandStore()
 store.register_command(admin_command)
 
 # Create context with your custom data
-ctx = store.create_context(
-    data=AppContext(user_name="Alice", is_admin=True)
-)
+ctx = store.create_context(data=AppContext(user_name="Alice", is_admin=True))
 
 # Execute command with typed context
 await store.execute_command("admin", ctx)
@@ -343,6 +339,7 @@ from slashed import CommandStore
 
 store = CommandStore()
 
+
 # Monitor command execution
 @store.command_executed.connect
 def on_command_executed(event):
@@ -352,16 +349,19 @@ def on_command_executed(event):
     else:
         print(f"Command '{event.command}' failed: {event.error}")
 
+
 # Monitor command output
 @store.output.connect
 def on_output(message: str):
     """Handle command output."""
     print(f"Output: {message}")
 
+
 # Monitor command registry changes
 @store.command_events.adding.connect
 def on_command_added(name: str, command):
     print(f"New command registered: {name}")
+
 
 # Monitor context registry changes
 @store.context_events.adding.connect
@@ -411,8 +411,10 @@ async def main():
         except EOFError:  # Ctrl+D
             break
 
+
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(main())
 ```
 
@@ -426,21 +428,27 @@ Slashed provides a powerful context system that automatically matches commands w
 from dataclasses import dataclass
 from slashed import SlashedCommand, CommandStore, CommandContext
 
+
 # Define your contexts
 @dataclass
 class DatabaseContext:
     """Database connection context."""
+
     connection: str
     timeout: int = 30
+
 
 @dataclass
 class UIContext:
     """UI context."""
+
     theme: str = "dark"
+
 
 # Commands specify their required context type
 class QueryCommand(SlashedCommand):
     """Execute a database query."""
+
     name = "query"
 
     async def execute_command(
@@ -450,6 +458,7 @@ class QueryCommand(SlashedCommand):
     ):
         db = ctx.get_data()  # Properly typed as DatabaseContext
         await ctx.print(f"Executing {query} with timeout {db.timeout}")
+
 
 # Register contexts and commands
 store = CommandStore()
@@ -476,11 +485,13 @@ from textual.widgets import Input, Label
 @dataclass
 class AppState:
     """Application state available to commands."""
+
     user_name: str
 
 
 class GreetCommand(SlashedCommand):
     """Greet someone."""
+
     name = "greet"
     category = "demo"
 
@@ -529,17 +540,22 @@ Slashed provides a flexible routing system that allows organizing commands into 
 from dataclasses import dataclass
 from slashed import CommandRouter, CommandStore, SlashedCommand
 
+
 # Define contexts for different subsystems
 @dataclass
 class GlobalContext:
     """Global application context."""
+
     env: str = "production"
+
 
 @dataclass
 class DatabaseContext:
     """Database connection context."""
+
     connection: str
     timeout: int = 30
+
 
 # Create store and router
 store = CommandStore()

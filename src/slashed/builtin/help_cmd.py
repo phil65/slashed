@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 from slashed.base import CommandContext  # noqa: TC001
 from slashed.commands import SlashedCommand
 from slashed.completers import CallbackCompleter
-from slashed.completion import CompletionContext, CompletionItem  # noqa: TC001
+from slashed.completion import CompletionContext, CompletionItem
 from slashed.exceptions import ExitCommandError
 
 

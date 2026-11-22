@@ -105,6 +105,6 @@ class PromptToolkitCompleter[TContextData = Any](Completer):
             else:
                 msg = "Unexpected RuntimeError during completion for text '%s': %s"
                 logger.debug(msg, text, str(e), exc_info=True)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             msg = "Completion failed for text '%s': %s (%s)"
             logger.debug(msg, text, str(e), type(e).__name__, exc_info=True)

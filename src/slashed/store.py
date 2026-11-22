@@ -82,10 +82,6 @@ class CommandStore:
     def command_events(self) -> DictEvents:
         return self._commands.events
 
-    @property
-    def context_events(self) -> DictEvents:
-        return self._contexts._contexts.events
-
     def _initialize_sync(self) -> None:
         """Initialize the store synchronously."""
         if self._initialized:
@@ -608,7 +604,7 @@ class CommandStore:
         """
 
         def decorator(func: TCommandFunc) -> TCommandFunc:
-            cmd_name = name or func.__name__.replace("_", "-")
+            cmd_name = name or getattr(func, "__name__", "command").replace("_", "-")
             cmd_description = description or func.__doc__ or "No description"
             self.add_command(
                 name=cmd_name,

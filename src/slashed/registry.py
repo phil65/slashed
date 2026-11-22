@@ -49,7 +49,7 @@ class CommandRegistry:
         """Decorator to collect a command for later registration."""
 
         def decorator(func: TCommandFunc) -> TCommandFunc:
-            cmd_name = name or func.__name__.replace("_", "-")
+            cmd_name = name or getattr(func, "__name__", "command").replace("_", "-")
             entry = CommandEntry(
                 name=cmd_name,
                 func=func,

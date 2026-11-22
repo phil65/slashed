@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Any
 
 import bashlex  # type: ignore[import-untyped]
 import bashlex.ast  # type: ignore[import-untyped]
+import bashlex.errors  # type: ignore[import-untyped]
 
 from slashed.base import CommandResult
 from slashed.exceptions import CommandError
@@ -64,7 +65,7 @@ class ShellExecutor:
         """
         try:
             parts = bashlex.parse(command_line)
-        except bashlex.errors.ParsingError as e:  # pyright: ignore[reportAttributeAccessIssue]
+        except bashlex.errors.ParsingError as e:
             return CommandResult(stderr=f"Parse error: {e}", exit_code=1)
 
         if not parts:
@@ -91,7 +92,7 @@ class ShellExecutor:
         Returns:
             Result of execution
         """
-        match node.kind:  # pyright: ignore[reportAttributeAccessIssue]
+        match node.kind:  # pyright: ignore[reportAttributeAccessIssue]  # ty: ignore[missing-attribute]
             case "command":
                 return await self._execute_command(node, ctx)
             case "pipeline":
@@ -106,7 +107,7 @@ class ShellExecutor:
                 )
             case _:
                 return CommandResult(
-                    stderr=f"Unknown node kind: {node.kind}",  # pyright: ignore[reportAttributeAccessIssue]
+                    stderr=f"Unknown node kind: {node.kind}",  # pyright: ignore[reportAttributeAccessIssue]  # ty: ignore[missing-attribute]
                     exit_code=1,
                 )
 
@@ -126,7 +127,7 @@ class ShellExecutor:
         """
         # Extract words from the command (skip redirections, assignments for now)
         words: list[str] = []
-        for part in node.parts:  # pyright: ignore[reportAttributeAccessIssue]
+        for part in node.parts:  # pyright: ignore[reportAttributeAccessIssue]  # ty: ignore[missing-attribute]
             if part.kind == "word":  # pyright: ignore[reportAttributeAccessIssue]
                 words.append(part.word)  # pyright: ignore[reportAttributeAccessIssue]
             elif part.kind == "redirect":
@@ -194,7 +195,7 @@ class ShellExecutor:
             Result of the last command in pipeline
         """
         # Extract commands from pipeline (skip pipe operators)
-        commands = [p for p in node.parts if p.kind == "command"]  # pyright: ignore[reportAttributeAccessIssue]
+        commands = [p for p in node.parts if p.kind == "command"]  # pyright: ignore[reportAttributeAccessIssue]  # ty: ignore[missing-attribute]
         if not commands:
             return CommandResult()
 
@@ -239,7 +240,7 @@ class ShellExecutor:
         result = CommandResult()
         pending_operator: str | None = None
 
-        for part in node.parts:  # pyright: ignore[reportAttributeAccessIssue]
+        for part in node.parts:  # pyright: ignore[reportAttributeAccessIssue]  # ty: ignore[missing-attribute]
             if part.kind == "operator":  # pyright: ignore[reportAttributeAccessIssue]
                 pending_operator = part.op  # pyright: ignore[reportAttributeAccessIssue]
             elif part.kind in ("command", "pipeline"):

@@ -12,7 +12,7 @@ from slashed.log import get_logger
 
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Iterator
+    from collections.abc import AsyncIterator, Generator
 
     from slashed.base import OutputWriter
     from slashed.store import CommandStore
@@ -145,7 +145,7 @@ class CommandRouter[TGlobalContext, TRouteContext]:
         self._active_context = context
 
     @contextmanager
-    def temporary_context(self, context: TRouteContext) -> Iterator[None]:
+    def temporary_context(self, context: TRouteContext) -> Generator[None]:
         """Temporarily switch context.
 
         Args:
@@ -366,7 +366,7 @@ class CommandRouter[TGlobalContext, TRouteContext]:
                     yield CompletionItem(
                         text=f"@{route.prefix}",
                         metadata=route.description,
-                        kind="route",  # type: ignore
+                        kind="route",
                     )
             return
 

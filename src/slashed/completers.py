@@ -136,7 +136,7 @@ class PathCompleter(CompletionProvider):
                 else:
                     kind = utils.get_file_kind(entry)
                 meta = utils.get_metadata(entry)
-                yield CompletionItem(text=name, display=display, kind=kind, metadata=meta)  # type: ignore[arg-type]
+                yield CompletionItem(text=name, display=display, kind=kind, metadata=meta)
 
         except Exception as e:  # noqa: BLE001
             # Log error but don't raise
@@ -298,7 +298,7 @@ class KeywordCompleter(CompletionProvider):
             prefix = word[2:]
             for name, desc in self.keywords.items():
                 if name.startswith(prefix):
-                    yield CompletionItem(f"--{name}", metadata=str(desc), kind="keyword")  # type: ignore[arg-type]
+                    yield CompletionItem(f"--{name}", metadata=str(desc), kind="keyword")
             return
 
         # Complete keyword values if provider exists

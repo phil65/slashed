@@ -70,7 +70,7 @@ class TextualOutputWriter(OutputWriter):
             raise ValueError(msg)
 
         binding = self._bindings.get(
-            output_id or self._default_binding,  # type: ignore
+            output_id or self._default_binding,
         )
         if not binding:
             msg = f"No binding found for output: {output_id}"

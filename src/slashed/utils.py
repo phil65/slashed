@@ -13,6 +13,8 @@ if TYPE_CHECKING:
 
     import upath
 
+    from slashed.slashed_types import CompletionKind
+
 
 type PathType = str | os.PathLike[str]
 
@@ -20,17 +22,18 @@ type PathType = str | os.PathLike[str]
 logger = get_logger(__name__)
 
 
-def get_file_kind(path: Path | upath.UPath) -> str:
+def get_file_kind(path: Path | upath.UPath) -> CompletionKind:
     """Get more specific file kind based on extension."""
     ext = path.suffix.lower()
-    return {
+    kinds: dict[str, CompletionKind] = {
         ".py": "python",
         ".yml": "yaml",
         ".yaml": "yaml",
         ".json": "json",
         ".md": "markdown",
         ".txt": "text",
-    }.get(ext, "file")
+    }
+    return kinds.get(ext, "file")
 
 
 def format_size(size: int) -> str:

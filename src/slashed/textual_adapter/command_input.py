@@ -116,7 +116,7 @@ class CommandInput[TContext](Input, CommandWidgetMixin[TContext]):  # type: igno
                     CompletionItem(
                         text=cmd.name,
                         metadata=cmd.description,
-                        kind="command-arg",  # type: ignore
+                        kind="command-arg",
                     )
                     for cmd in matches
                 ]

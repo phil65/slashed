@@ -129,7 +129,7 @@ class CommandTextArea[TContext](TextArea, CommandWidgetMixin[TContext]):  # type
                     CompletionItem(
                         text=cmd.name,
                         metadata=cmd.description,
-                        kind="command-arg",  # type: ignore
+                        kind="command-arg",
                     )
                     for cmd in matches
                 ]
