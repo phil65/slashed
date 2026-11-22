@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING, Any, assert_type
 
 import pytest
 
-from slashed.base import BaseCommand, CommandContext
+from slashed.base import BaseCommand, Command, CommandContext
+from slashed.commands import SlashedCommand
 from slashed.context import ContextRegistration, ContextRegistry
 
 
@@ -36,6 +37,19 @@ class ExtendedUIContext(UIContext):
     """Extended UI context for inheritance testing."""
 
     window_size: tuple[int, int] = (800, 600)
+
+
+class DatabaseSlashedCommand(SlashedCommand):
+    """Declarative command requiring database context."""
+
+    name = "db-slashed"
+
+    async def execute_command(self, ctx: CommandContext[DatabaseContext], query: str) -> None:
+        """Run a query."""
+
+
+async def ui_func(ctx: CommandContext[UIContext], theme: str) -> None:
+    """Function command requiring UI context."""
 
 
 # Test commands with different union syntaxes
@@ -379,3 +393,21 @@ def test_no_matching_context(registry: ContextRegistry):
     cmd = OldUnionCommand()
     match = registry.match_command(cmd)
     assert match is None
+
+
+def test_match_slashed_and_function_commands(
+    registry: ContextRegistry,
+    db_context: DatabaseContext,
+    ui_context: UIContext,
+):
+    """Context is matched from execute_command / the wrapped function signature."""
+    registry.register(db_context)
+    registry.register(ui_context)
+
+    match = registry.match_command(DatabaseSlashedCommand())
+    assert match is not None
+    assert match.data == db_context
+
+    match = registry.match_command(Command(ui_func))
+    assert match is not None
+    assert match.data == ui_context

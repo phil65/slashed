@@ -44,7 +44,7 @@ class PromptToolkitCompleter[TContextData = Any](Completer):
         """
         self._store = store or CommandStore()
         # Cast to CommandContext[T] since we know the type is preserved
-        self._context: CommandContext[TContextData] = store.create_context(  # type: ignore
+        self._context: CommandContext[TContextData] = self._store.create_context(
             data, output_writer, metadata
         )
 

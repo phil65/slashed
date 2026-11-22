@@ -12,7 +12,8 @@ from typing import (
     get_type_hints,
 )
 
-from slashed.base import CommandContext
+from slashed.base import Command, CommandContext
+from slashed.commands import SlashedCommand
 from slashed.log import get_logger
 
 
@@ -177,7 +178,19 @@ class ContextRegistry:
         """Find matching context for command based on signature."""
         from typing import Union
 
-        params = get_type_hints(command.execute)
+        # Inspect the user-defined callable: the generic `execute` of SlashedCommand
+        # and Command only carries `CommandContext[Any]`.
+        if isinstance(command, SlashedCommand):
+            target: Any = command.execute_command
+        elif isinstance(command, Command):
+            target = command._execute_func
+        else:
+            target = command.execute
+        try:
+            params = get_type_hints(target)
+        except (NameError, TypeError):
+            logger.debug("Could not resolve type hints for command %s", command.name)
+            return None
 
         if "ctx" not in params:
             logger.debug("Command %s has no ctx parameter", command.name)
