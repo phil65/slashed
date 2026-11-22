@@ -39,7 +39,9 @@ Issues = "https://github.com/phil65/slashed/issues"
 Source = "https://github.com/phil65/slashed"
 
 [project.optional-dependencies]
+prompt-toolkit = ["prompt-toolkit>=3.0.48"]
 system_commands = ["psutil>=6.1.1"]
+textual = ["prompt-toolkit>=3.0.48", "rich>=13.9.4", "textual>=1.0.0"]
 
 [dependency-groups]
 dev = [
