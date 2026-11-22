@@ -43,7 +43,8 @@ A Python library for implementing slash commands with rich autocompletion suppor
   - Callback based lists
   - Environment variables
 - Extensible completion provider system
-- Modern Python features (requires Python 3.12+)
+- Shell-style chaining of commands (`&&`, `||`, `;`, pipes)
+- Modern Python features (requires Python 3.13+)
 - UI framework integration:
   - Textual support
   - prompt_toolkit support
@@ -60,12 +61,18 @@ making it more adaptable to different application needs while maintaining a clea
 
 ```bash
 pip install slashed
+# optional integrations
+pip install "slashed[textual]"         # Textual widgets and SlashedApp
+pip install "slashed[prompt-toolkit]"  # prompt_toolkit completer
+pip install "slashed[system_commands]" # /exec, /run, /processes, ... (psutil)
 ```
 
 ## Quick Example
 
 ```python
+import asyncio
 from dataclasses import dataclass
+
 from slashed import SlashedCommand, CommandStore, CommandContext
 from slashed.completers import ChoiceCompleter
 
@@ -109,15 +116,19 @@ class GreetCommand(SlashedCommand):
         })
 
 
-# Create store and register the command
-store = CommandStore()
-store.register_command(GreetCommand)
+async def main():
+    # Create store and register the command
+    store = CommandStore()
+    store.register_command(GreetCommand)
 
-# Create context with app state
-ctx = store.create_context(data=AppState())
+    # Create context with app state
+    ctx = store.create_context(data=AppState())
 
-# Execute a command
-await store.execute_command("greet Phil --greeting Hi", ctx)
+    # Execute a command (no leading slash)
+    await store.execute_command("greet Phil --greeting Hi", ctx)  # Hi, Phil! (Greeted 1 times)
+
+
+asyncio.run(main())
 ```
 
 ## Command Definition Styles
@@ -218,6 +229,14 @@ Use the **SlashedCommand style** when:
 #### Using the Command Decorator
 
 ```python
+from importlib.util import find_spec
+
+from slashed import CommandContext, CommandStore
+from slashed.completers import PathCompleter
+
+store = CommandStore()
+
+
 @store.command(
     category="tools",
     usage="<pattern> [--type type]",
@@ -256,7 +275,9 @@ you can use `CommandRegistry` to collect commands and register them later:
 
 ```python
 # commands.py
-from slashed import CommandRegistry
+from importlib.util import find_spec
+
+from slashed import CommandContext, CommandRegistry
 from slashed.completers import PathCompleter
 
 registry = CommandRegistry()
@@ -298,24 +319,20 @@ class AppContext:
 
 
 # Command that uses the typed context
-async def admin_cmd(
-    ctx: CommandContext[AppContext],
-    args: list[str],
-    kwargs: dict[str, str],
-):
+async def admin_cmd(ctx: CommandContext[AppContext], action: str = "status"):
     """Admin-only command."""
     state = ctx.get_data()  # Type-safe access to context data
     if not state.is_admin:
         await ctx.print("Sorry, admin access required!")
         return
-    await ctx.print(f"Welcome admin {state.user_name}!")
+    await ctx.print(f"Welcome admin {state.user_name}! Running {action}")
 
 
 # Create and register the command
 admin_command = Command(
+    admin_cmd,
     name="admin",
     description="Admin-only command",
-    execute_func=admin_cmd,
     category="admin",
 )
 
@@ -326,8 +343,8 @@ store.register_command(admin_command)
 # Create context with your custom data
 ctx = store.create_context(data=AppContext(user_name="Alice", is_admin=True))
 
-# Execute command with typed context
-await store.execute_command("admin", ctx)
+# Execute command with typed context (inside an async function)
+await store.execute_command("admin restart", ctx)
 ```
 
 ## Signal-Based Event System
@@ -358,23 +375,17 @@ def on_output(message: str):
 
 
 # Monitor command registry changes
-@store.command_events.adding.connect
+@store.command_events.added.connect
 def on_command_added(name: str, command):
     print(f"New command registered: {name}")
-
-
-# Monitor context registry changes
-@store.context_events.adding.connect
-def on_context_added(type_: type, context):
-    print(f"New context registered: {type_.__name__}")
 ```
 
 ### Available Signals
 
 - `command_executed`: Emitted after command execution (success/failure)
 - `output`: Emitted for all command output
-- `command_events`: EventedDict signals for command registry changes
-- `context_events`: EventedDict signals for context registry changes
+- `command_events`: psygnal `EventedDict` signals for command registry changes
+  (`adding`, `added`, `removed`, `changed`, ...)
 
 The signal system provides a clean way to handle events without tight coupling, making it ideal for UI integration and logging.
 
@@ -465,8 +476,22 @@ store = CommandStore()
 store.register_context(DatabaseContext("mysql://localhost"))
 store.register_context(UIContext("light"))
 
-# Commands automatically get their matching context
-await store.execute_command_auto("/query select * from users")
+# Commands automatically get their matching context (inside an async function)
+await store.execute_command_auto("query 'select * from users'")
+```
+
+Context matching reads the `ctx` annotation at runtime, so the context classes must be
+importable from the command's module (not defined inside a function).
+
+## Shell-Style Command Lines
+
+`execute_shell` parses a command line with bashlex and runs the slash commands it contains,
+supporting `&&`, `||`, `;` and pipes:
+
+```python
+ctx = store.create_context(data=AppState())
+result = await store.execute_shell("greet Alice && greet Bob", ctx)
+print(result.exit_code)
 ```
 
 
@@ -476,8 +501,9 @@ await store.execute_command_auto("/query select * from users")
 ```python
 from dataclasses import dataclass
 
-from slashed import ChoiceCompleter, SlashedCommand
+from slashed import ChoiceCompleter, CommandContext, SlashedCommand
 from slashed.textual_adapter import SlashedApp
+from textual.app import ComposeResult
 from textual.containers import Container, VerticalScroll
 from textual.widgets import Input, Label
 
@@ -538,7 +564,7 @@ Slashed provides a flexible routing system that allows organizing commands into 
 
 ```python
 from dataclasses import dataclass
-from slashed import CommandRouter, CommandStore, SlashedCommand
+from slashed import CommandRouter, CommandStore, DefaultOutputWriter
 
 
 # Define contexts for different subsystems
@@ -559,6 +585,9 @@ class DatabaseContext:
 
 # Create store and router
 store = CommandStore()
+await store.initialize()  # registers builtin commands like help
+output = DefaultOutputWriter()
+db_context = DatabaseContext("mysql://localhost")
 router = CommandRouter[GlobalContext, DatabaseContext](
     global_context=GlobalContext(),
     commands=store,
@@ -567,7 +596,7 @@ router = CommandRouter[GlobalContext, DatabaseContext](
 # Add route with restricted commands
 router.add_route(
     "db",
-    DatabaseContext("mysql://localhost"),
+    db_context,
     description="Database operations",
     allowed_commands={"query", "migrate"},  # Only allow specific commands
 )
@@ -598,7 +627,7 @@ For full documentation including advanced usage and API reference, visit [phil65
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request. Make sure to read our contributing guidelines first.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
