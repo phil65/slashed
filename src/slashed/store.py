@@ -212,7 +212,7 @@ class CommandStore:
             ```python
             # Will automatically use DBContext for database commands
             # and UIContext for UI commands
-            await store.execute_command_auto("/query select * from users")
+            await store.execute_command_auto("query 'select * from users'")
             ```
 
         Raises:

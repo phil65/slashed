@@ -263,7 +263,7 @@ class EnvCommand(SlashedCommand):
     """Show or set environment variables.
 
     Usage:
-      /env [name] [value]
+      `/env [name] [value]`
 
     Without arguments: show all environment variables
     With name: show specific variable
