@@ -3,7 +3,7 @@
 [project]
 name = "slashed"
 version = "1.2.1"
-description = "Slash commands and autocompletions"
+description = "Async slash commands with typed arguments and autocompletion for Textual and prompt_toolkit"
 readme = "README.md"
 requires-python = ">=3.13"
 license = "MIT"
@@ -11,9 +11,22 @@ license-files = ["LICENSE"]
 authors = [
   { name = "Philipp Temminghoff", email = "philipptemminghoff@googlemail.com" },
 ]
-keywords = []
+keywords = [
+  "async",
+  "autocompletion",
+  "cli",
+  "command-parser",
+  "commands",
+  "prompt-toolkit",
+  "repl",
+  "slash-commands",
+  "textual",
+  "tui",
+]
 classifiers = [
   "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Framework :: AsyncIO",
   "Intended Audience :: Developers",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
@@ -21,6 +34,9 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
   "Topic :: Software Development",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: Software Development :: User Interfaces",
+  "Topic :: Terminals",
   "Topic :: Utilities",
   "Typing :: Typed",
 ]
@@ -35,6 +51,7 @@ dependencies = [
 "Code coverage" = "https://app.codecov.io/gh/phil65/slashed"
 Discussions = "https://github.com/phil65/slashed/discussions"
 Documentation = "https://phil65.github.io/slashed/"
+Homepage = "https://github.com/phil65/slashed"
 Issues = "https://github.com/phil65/slashed/issues"
 Source = "https://github.com/phil65/slashed"
 
