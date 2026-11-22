@@ -9,7 +9,6 @@
 [![Implementation](https://img.shields.io/pypi/implementation/slashed.svg)](https://pypi.org/project/slashed/)
 [![Releases](https://img.shields.io/github/downloads/phil65/slashed/total.svg)](https://github.com/phil65/slashed/releases)
 [![Github Contributors](https://img.shields.io/github/contributors/phil65/slashed)](https://github.com/phil65/slashed/graphs/contributors)
-[![Github Discussions](https://img.shields.io/github/discussions/phil65/slashed)](https://github.com/phil65/slashed/discussions)
 [![Github Forks](https://img.shields.io/github/forks/phil65/slashed)](https://github.com/phil65/slashed/forks)
 [![Github Issues](https://img.shields.io/github/issues/phil65/slashed)](https://github.com/phil65/slashed/issues)
 [![Github Issues](https://img.shields.io/github/issues-pr/phil65/slashed)](https://github.com/phil65/slashed/pulls)
