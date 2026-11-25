@@ -188,7 +188,7 @@ class ContextRegistry:
             target = command.execute
         try:
             params = get_type_hints(target)
-        except (NameError, TypeError):
+        except NameError, TypeError:
             logger.debug("Could not resolve type hints for command %s", command.name)
             return None
 

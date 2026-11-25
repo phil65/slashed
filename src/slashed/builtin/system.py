@@ -125,7 +125,7 @@ class ProcessesCommand(SlashedCommand):
                 pinfo = process.info
                 if not filter_by or filter_by.lower() in pinfo["name"].lower():
                     processes.append(pinfo)
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
+            except psutil.NoSuchProcess, psutil.AccessDenied:
                 continue
 
         if not processes:
@@ -249,7 +249,7 @@ class KillCommand(SlashedCommand):
                 if proc.info["name"].lower() == target.lower():
                     proc.terminate()
                     killed += 1
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
+            except psutil.NoSuchProcess, psutil.AccessDenied:
                 continue
 
         if killed:

@@ -437,7 +437,7 @@ def _get_resolved_hints(func: Callable[..., Any]) -> dict[str, Any]:
     """
     try:
         return get_type_hints(func, include_extras=True)
-    except (TypeError, NameError):
+    except TypeError, NameError:
         # If resolution fails (e.g., unresolvable forward references),
         # return empty dict - shorthand features won't work but command still runs
         return {}
@@ -662,7 +662,7 @@ def _is_context_param(param_name: str, func: Callable[..., Any] | None = None) -
                     isinstance(origin, type) and issubclass(origin, CommandContext)
                 ):
                     return True
-        except (TypeError, AttributeError, NameError):
+        except TypeError, AttributeError, NameError:
             # Handle cases where type hints can't be resolved
             pass
 
