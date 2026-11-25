@@ -73,7 +73,7 @@ uv run pytest                        # tests (asyncio_mode = "auto")
 uv run ruff check . && uv run ruff format --check .
 uv run ty check                      # type check (src only); warnings fail CI
 uv run deptry src                    # dependency declaration check
-uv run mkdocs-mknodes build          # docs (README + auto-generated API pages)
+uv run mknodes build                 # docs (README + auto-generated API pages)
 duty lint | lint_check | test | build | serve  # duties.py; duty is not a project dependency
 ```
 
