@@ -10,6 +10,8 @@ from slashed.base import BaseCommand, extract_usage_params, parse_args
 
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from slashed.base import CommandContext
 
 
@@ -102,6 +104,10 @@ class SlashedCommand(BaseCommand):
             args: Command arguments (may include context as first param)
             kwargs: Command keyword arguments
         """
+
+    def get_callable(self) -> Callable[..., Any]:
+        """The ``execute_command`` method, whose signature defines the parameters."""
+        return self.execute_command
 
     async def execute(
         self,

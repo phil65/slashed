@@ -22,11 +22,15 @@ class ExecCommand(SlashedCommand):
     Usage:
       /exec <command> [args...]
 
-    The command runs synchronously and returns its output.
+    Waits for the command and prints its output, without blocking the event loop.
+    Arguments are passed through unchanged (``/exec git -C dir status``).
     """
 
     name = "exec"
     category = "system"
+    raw_args = True
+    timeout: float | None = None
+    """Seconds after which the process is killed (None: no limit)."""
 
     def get_completer(self) -> PathCompleter:
         """Get path completer for executables."""
@@ -38,23 +42,40 @@ class ExecCommand(SlashedCommand):
         command: str,
         *args: str,
     ) -> None:
-        """Execute system command synchronously."""
+        """Execute system command and wait for it."""
         try:
-            cmd = [command, *args]
-            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-            if result.stdout:
-                await ctx.print(f"```\n{result.stdout.rstrip()}\n```")
-            if result.stderr:
-                await ctx.print(f"**stderr:**\n```\n{result.stderr.rstrip()}\n```")
-
-        except subprocess.CalledProcessError as e:
-            msg = f"Command failed with exit code {e.returncode}"
-            if e.stderr:
-                msg = f"{msg}\n{e.stderr}"
-            raise CommandError(msg) from e
+            process = await asyncio.create_subprocess_exec(
+                command,
+                *args,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
         except FileNotFoundError as e:
             msg = f"Command not found: {command}"
             raise CommandError(msg) from e
+        try:
+            stdout_b, stderr_b = await asyncio.wait_for(process.communicate(), self.timeout)
+        except TimeoutError as e:
+            process.kill()
+            await process.wait()
+            msg = f"Command timed out after {self.timeout} s"
+            raise CommandError(msg) from e
+        except asyncio.CancelledError:
+            process.kill()
+            await process.wait()
+            raise
+        stdout = stdout_b.decode(errors="replace")
+        stderr = stderr_b.decode(errors="replace")
+        if process.returncode:
+            msg = f"Command failed with exit code {process.returncode}"
+            if stderr:
+                msg = f"{msg}\n{stderr}"
+            raise CommandError(msg)
+        if stdout:
+            await ctx.print(f"```\n{stdout.rstrip()}\n```")
+        if stderr:
+            await ctx.print(f"**stderr:**\n```\n{stderr.rstrip()}\n```")
 
 
 class RunCommand(SlashedCommand):
@@ -68,6 +89,7 @@ class RunCommand(SlashedCommand):
 
     name = "run"
     category = "system"
+    raw_args = True
 
     def get_completer(self) -> PathCompleter:
         """Get path completer for executables."""
@@ -179,7 +201,7 @@ class SystemInfoCommand(SlashedCommand):
         """Show system information."""
         import psutil
 
-        cpu_percent = psutil.cpu_percent(interval=1)
+        cpu_percent = await asyncio.to_thread(psutil.cpu_percent, interval=1)
         memory = psutil.virtual_memory()
         disk = psutil.disk_usage("/")
 

@@ -133,6 +133,17 @@ class BaseCommand(ABC):
     _help_text: str | None
     """Optional help text"""
 
+    raw_args: bool = False
+    """Pass the words after the command name unparsed, as positional arguments.
+
+    For commands forwarding an argv (``/exec git -C dir status``): no ``--flag value``
+    parsing and no ``--help`` interception.
+    """
+
+    def get_callable(self) -> Callable[..., Any]:
+        """The callable whose signature defines the command's parameters."""
+        return self.execute
+
     def is_available(self) -> bool:
         """Check if command is currently available.
 
@@ -235,6 +246,10 @@ class Command[TContext = Any](BaseCommand):
         self._completer = completer
         self._condition = condition
         self._visible = visible
+
+    def get_callable(self) -> Callable[..., Any]:
+        """The wrapped function, whose signature defines the parameters."""
+        return self._execute_func
 
     def is_available(self) -> bool:
         """Check if command is available based on condition."""

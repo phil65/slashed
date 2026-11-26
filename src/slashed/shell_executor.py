@@ -153,6 +153,8 @@ class ShellExecutor:
         args: list[str] = []
         kwargs: dict[str, str] = {}
         i = 0
+        if command.raw_args:
+            args, raw_args = list(raw_args), []
         while i < len(raw_args):
             arg = raw_args[i]
             if arg.startswith("--") and i + 1 < len(raw_args):
@@ -292,6 +294,8 @@ def _normalize_result(result: Any) -> CommandResult:
         return result
     if isinstance(result, str):
         return CommandResult(stdout=result)
+    if isinstance(result, bool):  # before int: bool is an int subclass
+        return CommandResult(exit_code=0 if result else 1)
     if isinstance(result, int):
         return CommandResult(exit_code=result)
     # For other types, convert to string

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from importlib import import_module
 import inspect
+import shlex
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from psygnal import Signal
@@ -15,6 +16,8 @@ from slashed.base import (
     Command,
     CommandContext,
     ExecuteFunc,
+    ParsedCommand,
+    ParsedCommandArgs,
     parse_command,
 )
 from slashed.builtin import get_system_commands
@@ -347,20 +350,30 @@ class CommandStore:
         """
         self.add_to_history(command_str)
         try:
-            # Parse the command string
-            parsed = parse_command(command_str)
+            try:
+                words = shlex.split(command_str)
+            except ValueError as e:
+                msg = f"Invalid command syntax: {e}"
+                raise CommandError(msg) from e
+            if not words:
+                msg = "Empty command"
+                raise CommandError(msg)  # noqa: TRY301
 
             # Get the command
-            command = self.get_command(parsed.name)
+            command = self.get_command(words[0])
             if not command:
-                msg = f"Unknown command: {parsed.name}"
+                msg = f"Unknown command: {words[0]}"
                 raise CommandError(msg)  # noqa: TRY301
+            if command.raw_args:
+                parsed = ParsedCommand(words[0], ParsedCommandArgs(args=words[1:], kwargs={}))
+            else:
+                parsed = parse_command(command_str)
 
             # Check for --help flag, but only handle it if command doesn't use it
             if "help" in parsed.args.kwargs:
-                # Check command signature via inspect
-                sig = inspect.signature(command.execute)
-                help_param = next((p for p in sig.parameters.items() if p[0] == "help"), None)
+                # The user's function, not the generic execute(ctx, args, kwargs) wrapper
+                sig = inspect.signature(command.get_callable())
+                help_param = sig.parameters.get("help")
 
                 # Only show our help if command doesn't handle help parameter
                 if not help_param:
@@ -396,7 +409,16 @@ class CommandStore:
             if self.event_handler:
                 await self.event_handler(event)
             self.command_executed.emit(event)
-        except CommandError:
+        except CommandError as e:
+            event = CommandExecutedEvent(
+                command=command_str,
+                context=ctx,
+                success=False,
+                error=e,
+            )
+            if self.event_handler:
+                await self.event_handler(event)
+            self.command_executed.emit(event)
             raise
         except Exception as e:
             msg = f"Command execution failed: {e}"
