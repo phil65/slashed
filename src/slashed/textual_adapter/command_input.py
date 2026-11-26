@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, ClassVar
 from prompt_toolkit.document import Document
 from textual import on
 from textual.binding import Binding
+from textual.events import Key  # noqa: TC002
 from textual.widgets import Input
 
 from slashed.completion import CompletionContext, CompletionItem
@@ -13,7 +14,6 @@ from slashed.textual_adapter.dropdown import CompletionOption
 
 
 if TYPE_CHECKING:
-    from textual.events import Key
     from textual.reactive import Reactive
 
 
