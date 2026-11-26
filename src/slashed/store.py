@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from importlib import import_module
 import inspect
+import json
 import shlex
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -46,6 +47,19 @@ logger = get_logger(__name__)
 TCommandFunc = TypeVar("TCommandFunc", bound=ExecuteFunc)
 
 
+MAX_HISTORY = 1000
+"""History entries kept when the history file is compacted on load."""
+
+
+def _decode_history_line(line: str) -> str:
+    """Decode a history line (JSON string; plain text in files written before)."""
+    try:
+        value = json.loads(line)
+    except ValueError:
+        return line
+    return value if isinstance(value, str) else line
+
+
 class CommandStore:
     """Central store for command management and history."""
 
@@ -73,6 +87,7 @@ class CommandStore:
         self._contexts = ContextRegistry()
         self.event_handler = event_handler
         self._command_history: list[str] = []
+        self._history_needs_newline = False
         self._history_path = UPath(history_file) if history_file else None
         self._enable_system_commands = enable_system_commands
         self._initialized = False
@@ -93,7 +108,14 @@ class CommandStore:
         # Load history
         try:
             if self._history_path and self._history_path.exists():
-                self._command_history = self._history_path.read_text("utf-8").splitlines()
+                text = self._history_path.read_text("utf-8")
+                self._command_history = [_decode_history_line(i) for i in text.splitlines()]
+                self._history_needs_newline = bool(text) and not text.endswith("\n")
+                if len(self._command_history) > 2 * MAX_HISTORY:
+                    self._command_history = self._command_history[-MAX_HISTORY:]
+                    lines = "".join(json.dumps(i) + "\n" for i in self._command_history)
+                    self._history_path.write_text(lines, encoding="utf-8")
+                    self._history_needs_newline = False
         except Exception:
             logger.exception("Failed to load command history")
             self._command_history = []
@@ -113,7 +135,17 @@ class CommandStore:
 
         self._command_history.append(command)
         if self._history_path:
-            self._history_path.write_text("\n".join(self._command_history))
+            # One JSON string per line: appending is O(1) and keeps multi-line entries.
+            line = json.dumps(command) + "\n"
+            if self._history_needs_newline:
+                line = "\n" + line
+            try:
+                with self._history_path.open("a", encoding="utf-8") as f:
+                    f.write(line)
+            except NotImplementedError, ValueError:  # filesystems without append mode
+                lines = "".join(json.dumps(i) + "\n" for i in self._command_history)
+                self._history_path.write_text(lines, encoding="utf-8")
+            self._history_needs_newline = False
 
     def get_history(self, limit: int | None = None, newest_first: bool = True) -> list[str]:
         """Get command history."""

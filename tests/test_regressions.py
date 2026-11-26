@@ -149,3 +149,28 @@ async def test_exec_failure_raises_command_error():
         await store.execute_command(f"exec {PYTHON} -c 'raise SystemExit(3)'", ctx)
     with pytest.raises(CommandError, match="not found"):
         await store.execute_command("exec definitely-not-a-command-xyz", ctx)
+
+
+async def test_history_keeps_multiline_entries(tmp_path: pathlib.Path):
+    path = tmp_path / "history"
+    store = CommandStore(history_file=path)
+    store._initialize_sync()
+    entries = ["one", "multi\nline", "ümlaut"]
+    for entry in entries:
+        store.add_to_history(entry)
+    reloaded = CommandStore(history_file=path)
+    reloaded._initialize_sync()
+    assert reloaded.get_history(newest_first=False) == entries
+    # appending, not rewriting the whole file per command
+    assert path.read_text("utf-8").count("\n") == len(entries)
+
+
+async def test_history_reads_old_plain_format(tmp_path: pathlib.Path):
+    path = tmp_path / "history"
+    path.write_text("first\nsecond", encoding="utf-8")  # old format: no final newline
+    store = CommandStore(history_file=path)
+    store._initialize_sync()
+    store.add_to_history("third")
+    reloaded = CommandStore(history_file=path)
+    reloaded._initialize_sync()
+    assert reloaded.get_history(newest_first=False) == ["first", "second", "third"]
