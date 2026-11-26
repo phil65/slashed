@@ -1,7 +1,5 @@
 """Regression tests for the 2026-11-26 review findings."""
 
-from __future__ import annotations
-
 import asyncio
 import shlex
 import sys

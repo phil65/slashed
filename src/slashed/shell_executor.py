@@ -9,8 +9,6 @@ This module provides execution of command lines with shell semantics:
 Uses bashlex for parsing the command line into an AST.
 """
 
-from __future__ import annotations
-
 from dataclasses import replace
 from typing import TYPE_CHECKING, Any
 

@@ -1,7 +1,5 @@
 """Example showing Slashed integration with prompt_toolkit."""
 
-from __future__ import annotations
-
 import asyncio
 from typing import Any
 

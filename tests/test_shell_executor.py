@@ -1,7 +1,5 @@
 """Tests for shell executor with pipes and chaining."""
 
-from __future__ import annotations
-
 import pytest
 
 from slashed import (

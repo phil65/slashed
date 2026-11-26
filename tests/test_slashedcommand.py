@@ -1,7 +1,5 @@
 """Test suite for SlashedCommand implementation."""
 
-from __future__ import annotations
-
 from typing import Annotated
 
 import pytest

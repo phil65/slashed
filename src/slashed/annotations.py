@@ -1,7 +1,5 @@
 """Annotations for command parameters."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 
 

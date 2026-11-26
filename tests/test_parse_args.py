@@ -1,7 +1,5 @@
 """Tests for parse_args function, especially VAR_POSITIONAL (*args) handling."""
 
-from __future__ import annotations
-
 from typing import Annotated
 
 import pytest

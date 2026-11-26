@@ -1,7 +1,5 @@
 """Common completion providers."""
 
-from __future__ import annotations
-
 from collections.abc import Awaitable, Iterable
 from copy import copy
 import inspect

@@ -1,7 +1,5 @@
 """Tests for command routing system."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import Any, Literal
 from unittest.mock import MagicMock

@@ -1,7 +1,5 @@
 """Multi-line command input widget with completion support."""
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, ClassVar, Literal
 
 from prompt_toolkit.document import Document

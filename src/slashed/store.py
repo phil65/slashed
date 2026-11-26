@@ -1,7 +1,5 @@
 """Command store implementation."""
 
-from __future__ import annotations
-
 from importlib import import_module
 import inspect
 import json

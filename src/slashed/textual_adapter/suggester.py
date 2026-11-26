@@ -1,7 +1,5 @@
 """Textual suggester adapter for Slashed."""
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, Any
 
 from prompt_toolkit.document import Document

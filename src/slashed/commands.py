@@ -1,7 +1,5 @@
 """Declarative command system."""
 
-from __future__ import annotations
-
 from abc import abstractmethod
 import inspect
 from typing import TYPE_CHECKING, Any

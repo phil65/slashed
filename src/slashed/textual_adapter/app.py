@@ -1,7 +1,5 @@
 """Textual suggester adapter for Slashed."""
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from textual.app import App

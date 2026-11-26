@@ -1,7 +1,5 @@
 """Base class for command input widgets."""
 
-from __future__ import annotations
-
 import asyncio
 import logging
 from typing import TYPE_CHECKING, Any

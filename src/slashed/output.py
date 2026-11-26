@@ -1,7 +1,5 @@
 """Output implementations for command system."""
 
-from __future__ import annotations
-
 import inspect
 import sys
 from typing import TYPE_CHECKING, Any

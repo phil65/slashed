@@ -1,7 +1,5 @@
 """System command implementations."""
 
-from __future__ import annotations
-
 import asyncio
 from importlib.util import find_spec
 import os

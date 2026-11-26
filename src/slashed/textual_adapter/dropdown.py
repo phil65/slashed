@@ -1,7 +1,5 @@
 """Dropdown widgets for command completion."""
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, ClassVar
 
 from rich.text import Text

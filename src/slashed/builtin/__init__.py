@@ -1,7 +1,5 @@
 """Built-in commands for Slashed."""
 
-from __future__ import annotations
-
 from slashed.builtin.help_cmd import HelpCommand, ExitCommand
 from slashed.builtin.system import (
     ExecCommand,
