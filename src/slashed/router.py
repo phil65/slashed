@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -101,9 +102,18 @@ class CommandRouter[TGlobalContext, TRouteContext]:
         """
         self.global_context = global_context
         self.commands = commands
-        self._active_context: TRouteContext | None = None
+        self._default_context: TRouteContext | None = None
         self._routes: dict[str, Route[TRouteContext]] = {}
-        self._context_stack: list[TRouteContext | None] = []
+        # Per task / thread, so concurrent temporary_context blocks don't see each other.
+        self._temporary_context: ContextVar[tuple[TRouteContext] | None] = ContextVar(
+            f"slashed_router_context_{id(self)}", default=None
+        )
+
+    @property
+    def _active_context(self) -> TRouteContext | None:
+        if (temporary := self._temporary_context.get()) is not None:
+            return temporary[0]
+        return self._default_context
 
     def add_route(
         self,
@@ -142,7 +152,7 @@ class CommandRouter[TGlobalContext, TRouteContext]:
         Args:
             context: Context to set as active, or None to use global
         """
-        self._active_context = context
+        self._default_context = context
 
     @contextmanager
     def temporary_context(self, context: TRouteContext) -> Generator[None]:
@@ -157,12 +167,11 @@ class CommandRouter[TGlobalContext, TRouteContext]:
                 await router.execute("list-tables", output)
             ```
         """
-        self._context_stack.append(self._active_context)
-        self._active_context = context
+        token = self._temporary_context.set((context,))
         try:
             yield
         finally:
-            self._active_context = self._context_stack.pop()
+            self._temporary_context.reset(token)
 
     def list_routes(self) -> list[RouteInfo]:
         """List available routes with descriptions.

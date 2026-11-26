@@ -14,6 +14,7 @@ from slashed import CommandContext, CommandStore, ShellExecutor, SlashedCommand
 from slashed.base import Command
 from slashed.builtin.system import ExecCommand
 from slashed.exceptions import CommandError
+from slashed.router import CommandRouter
 
 
 if TYPE_CHECKING:
@@ -174,3 +175,19 @@ async def test_history_reads_old_plain_format(tmp_path: pathlib.Path):
     reloaded = CommandStore(history_file=path)
     reloaded._initialize_sync()
     assert reloaded.get_history(newest_first=False) == ["first", "second", "third"]
+
+
+async def test_temporary_context_is_per_task():
+    store = CommandStore()
+    router: CommandRouter[str, str] = CommandRouter("global", store)
+    seen: dict[str, Any] = {}
+
+    async def use(name: str) -> None:
+        with router.temporary_context(name):
+            await asyncio.sleep(0.01)
+            seen[name] = router._active_context
+            await asyncio.sleep(0.01)
+
+    await asyncio.gather(use("A"), use("B"))
+    assert seen == {"A": "A", "B": "B"}
+    assert router._active_context is None
