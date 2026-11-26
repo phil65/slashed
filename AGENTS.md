@@ -6,7 +6,7 @@
 argument parsing and pluggable autocompletion. Commands are defined as functions
 (`Command`) or classes (`SlashedCommand`), collected in a `CommandStore`, and executed with a
 typed `CommandContext[T]`. Optional adapters integrate with Textual and prompt_toolkit.
-Python >= 3.13, package in `src/slashed/`.
+Python >= 3.14, package in `src/slashed/`.
 
 ## Architecture
 
@@ -83,7 +83,7 @@ on Linux/macOS/Windows with Python 3.13 and 3.14 (3.14 is allowed to fail). Docs
 
 ## Conventions
 
-- Modern Python (3.13): PEP 695 generics, `match`, `from __future__ import annotations`.
+- Modern Python (3.14): PEP 695 generics, `match`, no `from __future__ import annotations` (PEP 649; banned via ruff TID251).
 - Google-style docstrings without types in `Args`.
 - Tests are plain pytest functions (no classes); async tests need no marker.
 - Ruff with preview formatting; Markdown code blocks (README) are formatted too.
