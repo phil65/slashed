@@ -1,5 +1,6 @@
 """Command store implementation."""
 
+import annotationlib
 from importlib import import_module
 import inspect
 import json
@@ -402,7 +403,9 @@ class CommandStore:
             # Check for --help flag, but only handle it if command doesn't use it
             if "help" in parsed.args.kwargs:
                 # The user's function, not the generic execute(ctx, args, kwargs) wrapper
-                sig = inspect.signature(command.get_callable())
+                sig = inspect.signature(
+                    command.get_callable(), annotation_format=annotationlib.Format.FORWARDREF
+                )
                 help_param = sig.parameters.get("help")
 
                 # Only show our help if command doesn't handle help parameter

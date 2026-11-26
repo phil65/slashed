@@ -1,6 +1,7 @@
 """Base interfaces for the command system."""
 
 from abc import ABC, abstractmethod
+import annotationlib
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 import inspect
@@ -365,7 +366,7 @@ def extract_usage_params(func: Callable[..., Any], *, skip_first: bool = False) 
         func: The function to extract usage from
         skip_first: If True, skip the first parameter (for methods with 'self')
     """
-    sig = inspect.signature(func)
+    sig = inspect.signature(func, annotation_format=annotationlib.Format.FORWARDREF)
     params = list(sig.parameters.items())
 
     if skip_first and params:
@@ -449,7 +450,8 @@ def _get_resolved_hints(func: Callable[..., Any]) -> dict[str, Any]:
         Dict mapping parameter names to resolved type hints
     """
     try:
-        return get_type_hints(func, include_extras=True)
+        # FORWARDREF: one name that only exists under TYPE_CHECKING must not drop all hints
+        return get_type_hints(func, include_extras=True, format=annotationlib.Format.FORWARDREF)
     except TypeError, NameError:
         # If resolution fails (e.g., unresolvable forward references),
         # return empty dict - shorthand features won't work but command still runs
@@ -534,7 +536,7 @@ def parse_args(
     shorthand_map = _get_shorthand_map(func)
     kwargs = _expand_shorthand_kwargs(kwargs, shorthand_map)
 
-    sig = inspect.signature(func)
+    sig = inspect.signature(func, annotation_format=annotationlib.Format.FORWARDREF)
     params_list = list(sig.parameters.items())
     if skip_first and params_list:
         params_list = params_list[1:]
